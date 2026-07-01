@@ -7,13 +7,13 @@ export interface FFMessageLoadConfig {
   /**
    * `ffmpeg-core.js` URL.
    *
-   * @defaultValue `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VERSION}/dist/umd/ffmpeg-core.js`;
+   * @defaultValue `https://cdn.jsdelivr.net/npm/@ffmpeg-wasm-browser/core@${CORE_VERSION}/dist/umd/ffmpeg-core.js`;
    */
   coreURL?: string;
   /**
    * `ffmpeg-core.wasm` URL.
    *
-   * @defaultValue `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VERSION}/dist/umd/ffmpeg-core.wasm`;
+   * @defaultValue `https://cdn.jsdelivr.net/npm/@ffmpeg-wasm-browser/core@${CORE_VERSION}/dist/umd/ffmpeg-core.wasm`;
    */
   wasmURL?: string;
   /**

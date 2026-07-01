@@ -7,7 +7,7 @@
 		"start": "vinxi start"
 	},
 	"dependencies": {
-		"@ffmpeg/ffmpeg": "^0.12.15",
+		"@ffmpeg-wasm-browser/ffmpeg": "^0.1.0",
 		"@ffmpeg/util": "^0.12.2",
 		"@solidjs/router": "^0.14.1",
 		"@solidjs/start": "^1.0.4",

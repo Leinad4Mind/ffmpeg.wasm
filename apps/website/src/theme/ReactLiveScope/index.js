@@ -1,5 +1,5 @@
 import React from "react";
-import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { FFmpeg } from "@ffmpeg-wasm-browser/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
 
 // Add react-live imports you need here

@@ -32,6 +32,20 @@ type CoreFileData =
   | ArrayBuffer
   | number[];
 
+type ScriptElementLike = {
+  src: string;
+  onload: (() => void) | null;
+  onerror: (() => void) | null;
+  remove: () => void;
+};
+
+type DocumentLike = {
+  createElement(tagName: "script"): ScriptElementLike;
+  head: {
+    appendChild(element: ScriptElementLike): void;
+  };
+};
+
 declare global {
   interface Window {
     createFFmpegCore?: FFmpegCoreModuleFactory;
@@ -108,9 +122,9 @@ export class FFmpeg {
         throw ERROR_IMPORT_FAILURE;
       }
 
-      const actualWasmURL = wasmURL || coreURL.replace(/.js$/g, ".wasm");
+      const actualWasmURL = wasmURL || coreURL.replace(/\.js$/i, ".wasm");
       const actualWorkerURL =
-        workerURL || coreURL.replace(/.js$/g, ".worker.js");
+        workerURL || coreURL.replace(/\.js$/i, ".worker.js");
 
       this.#ffmpeg = await globalScope.createFFmpegCore({
         mainScriptUrlOrBlob: `${coreURL}#${btoa(
@@ -141,16 +155,20 @@ export class FFmpeg {
       throw new DOMException("Loading aborted", "AbortError");
     }
 
-    if (typeof document === "undefined") {
-      const workerImportScripts = (
-        globalThis as { importScripts?: (...urls: string[]) => void }
-      ).importScripts;
+    const scope = globalThis as typeof globalThis & {
+      document?: DocumentLike;
+      importScripts?: (...urls: string[]) => void;
+    };
+
+    const documentRef = scope.document;
+
+    if (!documentRef) {
+      if (typeof scope.importScripts !== "function") {
+        throw ERROR_IMPORT_FAILURE;
+      }
 
       try {
-        if (typeof workerImportScripts !== "function") {
-          throw ERROR_IMPORT_FAILURE;
-        }
-        workerImportScripts(url);
+        scope.importScripts(url);
         return;
       } catch {
         throw ERROR_IMPORT_FAILURE;
@@ -158,12 +176,14 @@ export class FFmpeg {
     }
 
     await new Promise<void>((resolve, reject) => {
-      const script = document.createElement("script");
+      const script = documentRef.createElement("script");
+
       const cleanup = () => {
         script.onload = null;
         script.onerror = null;
         signal?.removeEventListener("abort", onAbort);
       };
+
       const onAbort = () => {
         cleanup();
         script.remove();
@@ -171,16 +191,20 @@ export class FFmpeg {
       };
 
       script.src = url;
+
       script.onload = () => {
         cleanup();
         resolve();
       };
+
       script.onerror = () => {
         cleanup();
+        script.remove();
         reject(ERROR_IMPORT_FAILURE);
       };
+
       signal?.addEventListener("abort", onAbort, { once: true });
-      document.head.appendChild(script);
+      documentRef.head.appendChild(script);
     });
   }
 
@@ -244,9 +268,8 @@ export class FFmpeg {
   ): Promise<OK> => {
     if (!this.#ffmpeg) throw ERROR_NOT_LOADED;
 
-    const fs = this.#ffmpeg.FS.filesystems[
-      fsType as keyof typeof this.#ffmpeg.FS.filesystems
-    ];
+    const filesystems = this.#ffmpeg.FS.filesystems;
+    const fs = filesystems[fsType as keyof typeof filesystems];
     if (!fs) return false;
 
     this.#ffmpeg.FS.mount(fs, options, mountPoint);

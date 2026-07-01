@@ -11,11 +11,11 @@ It is recommended to read [Overview](/docs/overview) first.
 :::caution
 If you are a [vite](https://vitejs.dev/) user, use `esm` in **baseURL** instead of `umd`:
 
-~~https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd~~ => https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm
+~~https://cdn.jsdelivr.net/npm/@ffmpeg-wasm-browser/core@0.1.0/dist/umd~~ => https://cdn.jsdelivr.net/npm/@ffmpeg-wasm-browser/core@0.1.0/dist/esm
 :::
 
 ```jsx live
-// import { FFmpeg } from '@ffmpeg/ffmpeg';
+// import { FFmpeg } from '@ffmpeg-wasm-browser/ffmpeg';
 // import { fetchFile, toBlobURL } from '@ffmpeg/util';
 function() {
     const [loaded, setLoaded] = useState(false);
@@ -24,7 +24,7 @@ function() {
     const messageRef = useRef(null);
 
     const load = async () => {
-        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd'
+        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg-wasm-browser/core@0.1.0/dist/umd'
         const ffmpeg = ffmpegRef.current;
         ffmpeg.on('log', ({ message }) => {
             messageRef.current.innerHTML = message;
@@ -72,7 +72,7 @@ you have have fulfilled [Security Requirements](https://developer.mozilla.org/en
 :::
 
 ```jsx live
-// import { FFmpeg } from '@ffmpeg/ffmpeg';
+// import { FFmpeg } from '@ffmpeg-wasm-browser/ffmpeg';
 // import { fetchFile, toBlobURL } from '@ffmpeg/util';
 function() {
     const [loaded, setLoaded] = useState(false);
@@ -125,7 +125,7 @@ function() {
 ## Transcode video with timeout
 
 ```jsx live
-// import { FFmpeg } from '@ffmpeg/ffmpeg';
+// import { FFmpeg } from '@ffmpeg-wasm-browser/ffmpeg';
 // import { fetchFile } from '@ffmpeg/util';
 function() {
     const [loaded, setLoaded] = useState(false);
@@ -134,7 +134,7 @@ function() {
     const messageRef = useRef(null);
 
     const load = async () => {
-        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd'
+        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg-wasm-browser/core@0.1.0/dist/umd'
         const ffmpeg = ffmpegRef.current;
         ffmpeg.on('log', ({ message }) => {
             messageRef.current.innerHTML = message;
@@ -183,7 +183,7 @@ function() {
 :::
 
 ```jsx live
-// import { FFmpeg } from '@ffmpeg/ffmpeg';
+// import { FFmpeg } from '@ffmpeg-wasm-browser/ffmpeg';
 // import { fetchFile } from '@ffmpeg/util';
 function() {
     const [loaded, setLoaded] = useState(false);
@@ -192,7 +192,7 @@ function() {
     const messageRef = useRef(null);
 
     const load = async () => {
-        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd'
+        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg-wasm-browser/core@0.1.0/dist/umd'
         const ffmpeg = ffmpegRef.current;
         // Listen to progress event instead of log.
         ffmpeg.on('progress', ({ progress, time }) => {
@@ -234,7 +234,7 @@ function() {
 ## Split video into segments of equal duration
 
 ```jsx live
-// import { FFmpeg } from '@ffmpeg/ffmpeg';
+// import { FFmpeg } from '@ffmpeg-wasm-browser/ffmpeg';
 // import { fetchFile } from '@ffmpeg/util';
 function() {
     const [loaded, setLoaded] = useState(false);
@@ -243,7 +243,7 @@ function() {
     const messageRef = useRef(null);
 
     const load = async () => {
-        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd'
+        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg-wasm-browser/core@0.1.0/dist/umd'
         const ffmpeg = ffmpegRef.current;
         ffmpeg.on('log', ({ message }) => {
             messageRef.current.innerHTML = message;
@@ -304,7 +304,7 @@ function() {
 ## Display Text on the video
 
 ```jsx live
-// import { FFmpeg } from '@ffmpeg/ffmpeg';
+// import { FFmpeg } from '@ffmpeg-wasm-browser/ffmpeg';
 // import { fetchFile } from '@ffmpeg/util';
 function() {
     const [loaded, setLoaded] = useState(false);
@@ -313,7 +313,7 @@ function() {
     const messageRef = useRef(null);
 
     const load = async () => {
-        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd'
+        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg-wasm-browser/core@0.1.0/dist/umd'
         const ffmpeg = ffmpegRef.current;
         ffmpeg.on('log', ({ message }) => {
             messageRef.current.innerHTML = message;
@@ -363,7 +363,7 @@ function() {
 ## Interlace 2 Videos
 
 ```jsx live
-// import { FFmpeg } from '@ffmpeg/ffmpeg';
+// import { FFmpeg } from '@ffmpeg-wasm-browser/ffmpeg';
 // import { fetchFile } from '@ffmpeg/util';
 function() {
     const [loaded, setLoaded] = useState(false);
@@ -372,7 +372,7 @@ function() {
     const messageRef = useRef(null);
 
     const load = async () => {
-        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd'
+        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg-wasm-browser/core@0.1.0/dist/umd'
         const ffmpeg = ffmpegRef.current;
         ffmpeg.on('log', ({ message }) => {
             messageRef.current.innerHTML = message;
@@ -426,8 +426,8 @@ function() {
 :::note
 Required:
 
-- @ffmpeg/ffmpeg@0.12.10+
-- @ffmpeg/core@0.12.4+
+- @ffmpeg-wasm-browser/ffmpeg@0.1.0+
+- @ffmpeg-wasm-browser/core@0.1.0+
   :::
 
 Please Check this PR: [Add WORKERFS support](https://github.com/ffmpegwasm/ffmpeg.wasm/pull/581)
@@ -437,8 +437,8 @@ Please Check this PR: [Add WORKERFS support](https://github.com/ffmpegwasm/ffmpe
 :::note
 Required:
 
-- @ffmpeg/ffmpeg@0.12.10+
-- @ffmpeg/core@0.12.4+
+- @ffmpeg-wasm-browser/ffmpeg@0.1.0+
+- @ffmpeg-wasm-browser/core@0.1.0+
   :::
 
 Please check this PR: [abort signal](https://github.com/ffmpegwasm/ffmpeg.wasm/pull/573)

@@ -1,7 +1,7 @@
 {
-  "name": "@ffmpeg/ffmpeg",
-  "version": "0.12.15",
-  "description": "FFmpeg WebAssembly version for browser",
+  "name": "@ffmpeg-wasm-browser/ffmpeg",
+  "version": "0.1.0",
+  "description": "Browser-focused FFmpeg WebAssembly wrapper with Memory64, OPFS and no-worker support",
   "main": "./dist/umd/ffmpeg.js",
   "types": "./dist/esm/index.d.ts",
   "exports": {
@@ -41,7 +41,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ffmpegwasm/ffmpeg.wasm.git"
+    "url": "git+https://github.com/yari-dev/ffmpeg-wasm-browser.git"
   },
   "keywords": [
     "ffmpeg",
@@ -53,12 +53,12 @@
   "author": "Jerome Wu <jeromewus@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ffmpegwasm/ffmpeg.wasm/issues"
+    "url": "https://github.com/yari-dev/ffmpeg-wasm-browser/issues"
   },
   "engines": {
     "node": ">=18.x"
   },
-  "homepage": "https://github.com/ffmpegwasm/ffmpeg.wasm#readme",
+  "homepage": "https://github.com/yari-dev/ffmpeg-wasm-browser#readme",
   "publishConfig": {
     "access": "public"
   },

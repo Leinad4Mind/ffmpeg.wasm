@@ -11,3 +11,4 @@ dist
 
 .actrc
 .act-artifacts/
+build-cache-st/

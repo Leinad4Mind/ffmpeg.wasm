@@ -12,7 +12,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@ffmpeg/ffmpeg": "*",
+    "@ffmpeg-wasm-browser/ffmpeg": "*",
     "@ffmpeg/util": "*",
     "vue": "^3.4.18"
   },

@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { FFmpeg } from "@ffmpeg-wasm-browser/ffmpeg";
 import { toBlobURL, fetchFile } from "@ffmpeg/util";
 
 function App() {

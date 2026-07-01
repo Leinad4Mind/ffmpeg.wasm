@@ -24,7 +24,7 @@ table to transform 0.11.x to 0.12+
         </TableHead>
         <TableBody>
           {[
-            {"0.11.x": "import { createFFmpeg } from '@ffmpeg/ffmpeg'", "0.12+": "import { FFmpeg } from '@ffmpeg/ffmpeg'", note: ""},
+            {"0.11.x": "import { createFFmpeg } from '@ffmpeg-wasm-browser/ffmpeg'", "0.12+": "import { FFmpeg } from '@ffmpeg-wasm-browser/ffmpeg'", note: ""},
             {"0.11.x": "createFFmpeg()", "0.12+": "new FFmpeg()", note: "argumens of createFFmpeg() is moved to ffmpeg.load()"},
             {"0.11.x": "await ffmpeg.load()", "0.12+": "await ffmpeg.load()", note: ""},
             {"0.11.x": "await ffmpeg.run(...args)", "0.12+": "await ffmpeg.exec([...args])", note: ""},
@@ -33,7 +33,7 @@ table to transform 0.11.x to 0.12+
             {"0.11.x": "ffmpeg.exit()", "0.12+": "ffmpeg.terminate()", note: ""},
             {"0.11.x": "ffmpeg.setLogger()", "0.12+": "ffmpeg.on(\"log\", () => {})", note: ""},
             {"0.11.x": "ffmpeg.setProgress()", "0.12+": "ffmpeg.on(\"progress\", () => {})", note: ""},
-            {"0.11.x": "import { fetchFile } from '@ffmpeg/ffmpeg'", "0.12+": "import { fetchFile } from '@ffmpeg/util'", note: ""},
+            {"0.11.x": "import { fetchFile } from '@ffmpeg-wasm-browser/ffmpeg'", "0.12+": "import { fetchFile } from '@ffmpeg/util'", note: ""},
            ].map((row) => (
             <TableRow
               key={row['0.11.x']}

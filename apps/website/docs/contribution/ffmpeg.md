@@ -1,6 +1,6 @@
-# @ffmpeg/ffmpeg
+# @ffmpeg-wasm-browser/ffmpeg
 
-The source code of @ffmpeg/ffmpeg locates at **/packages/ffmpeg**.
+The source code of @ffmpeg-wasm-browser/ffmpeg locates at **/packages/ffmpeg**.
 
 ## Development
 
