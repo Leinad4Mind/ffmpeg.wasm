@@ -16,6 +16,14 @@
     "./worker": {
       "types": "./dist/esm/worker.d.ts",
       "default": "./dist/esm/worker.js"
+    },
+    "./no-worker": {
+      "types": "./dist/esm/no-worker.d.ts",
+      "node": "./dist/esm/empty.mjs",
+      "default": {
+        "import": "./dist/esm/no-worker.js",
+        "require": "./dist/umd/ffmpeg-no-worker.js"
+      }
     }
   },
   "scripts": {
