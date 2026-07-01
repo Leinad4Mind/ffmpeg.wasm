@@ -102,12 +102,15 @@ FROM ffmpeg-builder AS ffmpeg-wasm-builder
 COPY src/bind /src/src/bind
 COPY src/fftools /src/src/fftools
 COPY build/ffmpeg-wasm.sh build.sh
+COPY scripts/patch-opfs-async-access.js scripts/patch-opfs-async-access.js
 # Codec link libs are selected inside build.sh by $FFMPEG_VARIANT.
 RUN mkdir -p /src/dist/umd && bash -x /src/build.sh \
-      -o dist/umd/ffmpeg-core.js
+      -o dist/umd/ffmpeg-core.js \
+    && node scripts/patch-opfs-async-access.js dist/umd/ffmpeg-core.js
 RUN mkdir -p /src/dist/esm && bash -x /src/build.sh \
       -sEXPORT_ES6 \
-      -o dist/esm/ffmpeg-core.js
+      -o dist/esm/ffmpeg-core.js \
+    && node scripts/patch-opfs-async-access.js dist/esm/ffmpeg-core.js
 
 # Export ffmpeg-core.wasm to dist/, use `docker buildx build -o . .` to get assets
 FROM scratch AS exportor
