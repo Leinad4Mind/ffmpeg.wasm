@@ -80,6 +80,128 @@ function ffprobe(..._args) {
   return Module["ret"];
 }
 
+async function mountOPFS(mountPoint = "/opfs") {
+  if (typeof Module["_ffwasm_mount_opfs"] !== "function") {
+    throw new Error("OPFS support was not compiled into this ffmpeg-core");
+  }
+
+  const ptr = stringToPtr(mountPoint);
+  try {
+    const ret = await Module["_ffwasm_mount_opfs"](asPtrSize(ptr));
+    if (ret !== 0) {
+      throw new Error(`mountOPFS(${mountPoint}) failed with ${ret}`);
+    }
+    return mountPoint;
+  } finally {
+    if (typeof Module["_free"] === "function") Module["_free"](ptr);
+  }
+}
+
+async function mkdirp(path) {
+  if (typeof Module["_ffwasm_mkdirp"] !== "function") {
+    throw new Error("mkdirp support was not compiled into this ffmpeg-core");
+  }
+
+  const ptr = stringToPtr(path);
+  try {
+    const ret = await Module["_ffwasm_mkdirp"](asPtrSize(ptr));
+    if (ret !== 0) {
+      throw new Error(`mkdirp(${path}) failed with ${ret}`);
+    }
+    return true;
+  } finally {
+    if (typeof Module["_free"] === "function") Module["_free"](ptr);
+  }
+}
+
+function normalizeFileData(data) {
+  if (data instanceof Uint8Array) return data;
+  if (ArrayBuffer.isView(data)) {
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+  }
+  if (data instanceof ArrayBuffer) return new Uint8Array(data);
+  if (typeof data === "string") return new TextEncoder().encode(data);
+  if (Array.isArray(data)) return new Uint8Array(data);
+  throw new Error("Unsupported file data type");
+}
+
+async function writeFileOPFS(path, data) {
+  if (typeof Module["_ffwasm_write_file"] !== "function") {
+    throw new Error("writeFileOPFS support was not compiled into this ffmpeg-core");
+  }
+
+  const bytes = normalizeFileData(data);
+  const pathPtr = stringToPtr(path);
+  const dataPtr = bytes.length > 0 ? Module["_malloc"](bytes.length) : NULL;
+  try {
+    if (bytes.length > 0) {
+      Module["HEAPU8"].set(bytes, dataPtr);
+    }
+    const ret = await Module["_ffwasm_write_file"](
+      asPtrSize(pathPtr),
+      asPtrSize(dataPtr),
+      asPtrSize(bytes.length)
+    );
+    if (ret !== 0) {
+      throw new Error(`writeFileOPFS(${path}) failed with ${ret}`);
+    }
+    return true;
+  } finally {
+    if (dataPtr) Module["_free"](dataPtr);
+    if (typeof Module["_free"] === "function") Module["_free"](pathPtr);
+  }
+}
+
+async function fileSize(path) {
+  if (typeof Module["_ffwasm_file_size"] !== "function") {
+    throw new Error("fileSize support was not compiled into this ffmpeg-core");
+  }
+
+  const pathPtr = stringToPtr(path);
+  try {
+    const ret = await Module["_ffwasm_file_size"](asPtrSize(pathPtr));
+    const size = ptrToNumber(ret);
+    if (size < 0) {
+      throw new Error(`fileSize(${path}) failed with ${size}`);
+    }
+    return size;
+  } finally {
+    if (typeof Module["_free"] === "function") Module["_free"](pathPtr);
+  }
+}
+
+async function readFileChunk(path, offset, length) {
+  if (typeof Module["_ffwasm_read_file_chunk"] !== "function") {
+    throw new Error("readFileChunk support was not compiled into this ffmpeg-core");
+  }
+
+  if (offset < 0 || length < 0) {
+    throw new Error("readFileChunk offset and length must be non-negative");
+  }
+
+  const pathPtr = stringToPtr(path);
+  const outPtr = length > 0 ? Module["_malloc"](length) : NULL;
+  const bytesReadPtr = Module["_malloc"](_getPointerSize());
+  try {
+    const ret = await Module["_ffwasm_read_file_chunk"](
+      asPtrSize(pathPtr),
+      asPtrSize(offset),
+      asPtrSize(outPtr),
+      asPtrSize(length),
+      asPtrSize(bytesReadPtr)
+    );
+    if (ret !== 0) {
+      throw new Error(`readFileChunk(${path}) failed with ${ret}`);
+    }
+    const bytesRead = ptrToNumber(Module["getValue"](bytesReadPtr, "*"));
+    return Module["HEAPU8"].slice(outPtr, outPtr + bytesRead);
+  } finally {
+    if (outPtr) Module["_free"](outPtr);
+    Module["_free"](bytesReadPtr);
+    if (typeof Module["_free"] === "function") Module["_free"](pathPtr);
+  }
+}
+
 function setLogger(logger) {
   Module["logger"] = logger;
 }
@@ -140,6 +262,11 @@ Module["locateFile"] = _locateFile;
 
 Module["exec"] = exec;
 Module["ffprobe"] = ffprobe;
+Module["mountOPFS"] = mountOPFS;
+Module["mkdirp"] = mkdirp;
+Module["writeFileOPFS"] = writeFileOPFS;
+Module["fileSize"] = fileSize;
+Module["readFileChunk"] = readFileChunk;
 Module["setLogger"] = setLogger;
 Module["setTimeout"] = setTimeout;
 Module["setProgress"] = setProgress;
