@@ -72,6 +72,44 @@ ADD https://github.com/ffmpegwasm/libwebp.git#$LIBWEBP_BRANCH /src
 COPY build/libwebp.sh /src/build.sh
 RUN bash -x /src/build.sh
 
+# Build freetype2
+FROM emsdk-base AS freetype2-builder
+ENV FREETYPE2_BRANCH=VER-2-10-4
+ADD https://github.com/ffmpegwasm/freetype2.git#$FREETYPE2_BRANCH /src
+COPY build/freetype2.sh /src/build.sh
+RUN bash -x /src/build.sh
+
+# Build fribidi
+FROM emsdk-base AS fribidi-builder
+ENV FRIBIDI_BRANCH=v1.0.9
+ADD https://github.com/fribidi/fribidi.git#$FRIBIDI_BRANCH /src
+COPY build/fribidi.sh /src/build.sh
+RUN bash -x /src/build.sh
+
+# Build harfbuzz
+FROM emsdk-base AS harfbuzz-builder
+ENV HARFBUZZ_BRANCH=5.2.0
+ADD https://github.com/harfbuzz/harfbuzz.git#$HARFBUZZ_BRANCH /src
+COPY build/harfbuzz.sh /src/build.sh
+RUN bash -x /src/build.sh
+
+# Build libass
+FROM emsdk-base AS libass-builder
+COPY --from=freetype2-builder $INSTALL_DIR $INSTALL_DIR
+COPY --from=fribidi-builder $INSTALL_DIR $INSTALL_DIR
+COPY --from=harfbuzz-builder $INSTALL_DIR $INSTALL_DIR
+ENV LIBASS_BRANCH=0.15.0
+ADD https://github.com/libass/libass.git#$LIBASS_BRANCH /src
+COPY build/libass.sh /src/build.sh
+RUN bash -x /src/build.sh
+
+# Build libxml2
+FROM emsdk-base AS libxml2-builder
+ENV LIBXML2_VERSION=v2.12.10
+ADD https://github.com/GNOME/libxml2.git#$LIBXML2_VERSION /src
+COPY build/libxml2.sh /src/build.sh
+RUN bash -x /src/build.sh
+
 # Build zimg
 FROM emsdk-base AS zimg-builder
 ENV ZIMG_BRANCH=release-3.0.5
@@ -90,6 +128,11 @@ COPY --from=lame-builder $INSTALL_DIR $INSTALL_DIR
 COPY --from=opus-builder $INSTALL_DIR $INSTALL_DIR
 COPY --from=libwebp-builder $INSTALL_DIR $INSTALL_DIR
 COPY --from=zimg-builder $INSTALL_DIR $INSTALL_DIR
+COPY --from=freetype2-builder $INSTALL_DIR $INSTALL_DIR
+COPY --from=fribidi-builder $INSTALL_DIR $INSTALL_DIR
+COPY --from=harfbuzz-builder $INSTALL_DIR $INSTALL_DIR
+COPY --from=libass-builder $INSTALL_DIR $INSTALL_DIR
+COPY --from=libxml2-builder $INSTALL_DIR $INSTALL_DIR
 
 # Build ffmpeg
 FROM ffmpeg-base AS ffmpeg-builder
@@ -103,7 +146,32 @@ COPY src/bind /src/src/bind
 COPY src/fftools /src/src/fftools
 COPY build/ffmpeg-wasm.sh build.sh
 COPY scripts/patch-opfs-async-access.js scripts/patch-opfs-async-access.js
+<<<<<<< HEAD
 # Codec link libs are selected inside build.sh by $FFMPEG_VARIANT.
+=======
+# libraries to link
+ENV FFMPEG_LIBS \
+      -lx264 \
+      -lx265 \
+      -lvpx \
+      -lmp3lame \
+      -logg \
+      -ltheora \
+      -lvorbis \
+      -lvorbisenc \
+      -lvorbisfile \
+      -lopus \
+      -lz \
+      -lwebpmux \
+      -lwebp \
+      -lsharpyuv \
+      -lfreetype \
+      -lfribidi \
+      -lharfbuzz \
+      -lass \
+      -lzimg \
+      -lxml2
+>>>>>>> 1893073 (Enable native DASH parsing with libxml2)
 RUN mkdir -p /src/dist/umd && bash -x /src/build.sh \
       -o dist/umd/ffmpeg-core.js \
     && node scripts/patch-opfs-async-access.js dist/umd/ffmpeg-core.js
