@@ -43,12 +43,12 @@ describe(genName("exec()"), () => {
     expect("exec" in core).to.be.true;
   });
 
-  it("should output help", () => {
-    expect(core.exec("-h")).to.equal(0);
+  it("should output help", async () => {
+    expect(await core.exec("-h")).to.equal(0);
   });
 
-  it("should transcode", () => {
-    expect(core.exec("-i", "video.mp4", "video.avi")).to.equal(0);
+  it("should transcode", async () => {
+    expect(await core.exec("-i", "video.mp4", "video.avi")).to.equal(0);
     const out = core.FS.readFile("video.avi");
     expect(out.length).to.not.equal(0);
     core.FS.unlink("video.avi");
@@ -62,9 +62,9 @@ describe(genName("setTimeout()"), () => {
     expect("setTimeout" in core).to.be.true;
   });
 
-  it("should timeout", () => {
+  it("should timeout", async () => {
     core.setTimeout(1); // timeout after 1ms
-    expect(core.exec("-i", "video.mp4", "video.avi")).to.equal(1);
+    expect(await core.exec("-i", "video.mp4", "video.avi")).to.equal(1);
   });
 });
 
@@ -75,10 +75,10 @@ describe(genName("setLogger()"), () => {
     expect("setLogger" in core).to.be.true;
   });
 
-  it("should handle logs", () => {
+  it("should handle logs", async () => {
     const logs = [];
     core.setLogger(({ message }) => logs.push(message));
-    core.exec("-h");
+    await core.exec("-h");
     expect(logs.length).to.not.equal(0);
   });
 });
@@ -90,10 +90,10 @@ describe(genName("setProgress()"), () => {
     expect("setProgress" in core).to.be.true;
   });
 
-  it("should handle progress", () => {
+  it("should handle progress", async () => {
     let progress = 0;
     core.setProgress(({ progress: _progress }) => (progress = _progress));
-    expect(core.exec("-i", "video.mp4", "video.avi")).to.equal(0);
+    expect(await core.exec("-i", "video.mp4", "video.avi")).to.equal(0);
     expect(progress).to.equal(1);
     core.FS.unlink("video.avi");
   });

@@ -4,7 +4,7 @@ set -euo pipefail
 
 CONF_FLAGS=(
   --target-os=none              # disable target specific configs
-  --arch=x86_32                 # use x86_32 arch
+  --arch=x86_64                 # use x86_64 arch
   --enable-cross-compile        # use cross compile configs
   --disable-asm                 # disable asm
   --disable-stripping           # disable stripping as it won't work

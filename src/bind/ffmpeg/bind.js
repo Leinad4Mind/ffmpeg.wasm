@@ -25,6 +25,21 @@ Module["progress"] = () => {};
  * Functions
  */
 
+let _pointerSize = 0;
+function _getPointerSize() {
+  if (_pointerSize === 0) {
+    _pointerSize = (typeof Module["HEAPU64"] !== "undefined") ? 8 : 4;
+  }
+  return _pointerSize;
+}
+
+function asPtrSize(n) {
+  return _getPointerSize() === 8 ? BigInt(n) : n;
+}
+function ptrToNumber(p) {
+  return (typeof p === "bigint") ? Number(p) : p;
+}
+
 function stringToPtr(str) {
   const len = Module["lengthBytesUTF8"](str) + 1;
   const ptr = Module["_malloc"](len);
@@ -35,9 +50,10 @@ function stringToPtr(str) {
 
 function stringsToPtr(strs) {
   const len = strs.length;
-  const ptr = Module["_malloc"](len * SIZE_I32);
+  const ptrSize = _getPointerSize();
+  const ptr = Module["_malloc"](len * ptrSize);
   for (let i = 0; i < len; i++) {
-    Module["setValue"](ptr + SIZE_I32 * i, stringToPtr(strs[i]), "i32");
+    Module["setValue"](ptr + ptrSize * i, stringToPtr(strs[i]), "*");
   }
 
   return ptr;
@@ -52,26 +68,32 @@ function printErr(message) {
     Module["logger"]({ type: "stderr", message });
 }
 
-function exec(..._args) {
+async function exec(..._args) {
   const args = [...Module["DEFAULT_ARGS"], ..._args];
+  const argv = stringsToPtr(args);
   try {
-    Module["_ffmpeg"](args.length, stringsToPtr(args));
+    await Module["_ffmpeg"](args.length, asPtrSize(argv));
   } catch (e) {
-    if (!e.message.startsWith("Aborted")) {
+    if (!(e?.message || String(e)).startsWith("Aborted")) {
       throw e;
     }
+  } finally {
+    if (typeof Module["_free"] === "function") Module["_free"](argv);
   }
   return Module["ret"];
 }
 
-function ffprobe(..._args) {
+async function ffprobe(..._args) {
   const args = [...Module["DEFAULT_ARGS_FFPROBE"], ..._args];
+  const argv = stringsToPtr(args);
   try {
-    Module["_ffprobe"](args.length, stringsToPtr(args));
+    await Module["_ffprobe"](args.length, asPtrSize(argv));
   } catch (e) {
-    if (!e.message.startsWith("Aborted")) {
+    if (!(e?.message || String(e)).startsWith("Aborted")) {
       throw e;
     }
+  } finally {
+    if (typeof Module["_free"] === "function") Module["_free"](argv);
   }
   return Module["ret"];
 }
