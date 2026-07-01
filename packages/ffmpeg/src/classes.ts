@@ -61,6 +61,11 @@ export class FFmpeg {
             break;
           case FFMessageType.MOUNT:
           case FFMessageType.UNMOUNT:
+          case FFMessageType.MOUNT_OPFS:
+          case FFMessageType.MKDIRP:
+          case FFMessageType.WRITE_FILE_OPFS:
+          case FFMessageType.FILE_SIZE:
+          case FFMessageType.READ_FILE_CHUNK:
           case FFMessageType.EXEC:
           case FFMessageType.FFPROBE:
           case FFMessageType.WRITE_FILE:
@@ -361,6 +366,112 @@ export class FFmpeg {
       trans
     ) as Promise<OK>;
   };
+
+  /**
+   * Mount the browser Origin Private File System into ffmpeg.wasm.
+   *
+   * Files below this mount point are backed by OPFS instead of the
+   * in-memory filesystem. This is intended for large temporary inputs
+   * and outputs that would otherwise pressure MEMFS.
+   *
+   * @category File System
+   */
+  public mountOPFS = (
+    mountPoint: FFFSPath = "/opfs",
+    { signal }: FFMessageOptions = {}
+  ): Promise<FFFSPath> =>
+    this.#send(
+      {
+        type: FFMessageType.MOUNT_OPFS,
+        data: { mountPoint },
+      },
+      undefined,
+      signal
+    ) as Promise<FFFSPath>;
+
+  /**
+   * Recursively create a directory, similar to `mkdir -p`.
+   *
+   * @category File System
+   */
+  public mkdirp = (
+    path: FFFSPath,
+    { signal }: FFMessageOptions = {}
+  ): Promise<OK> =>
+    this.#send(
+      {
+        type: FFMessageType.MKDIRP,
+        data: { path },
+      },
+      undefined,
+      signal
+    ) as Promise<OK>;
+
+  /**
+   * Write a file through ffmpeg's POSIX I/O path.
+   *
+   * This is intended for OPFS paths because it lets JSPI-aware WasmFS
+   * handle the async browser storage work behind a Promise.
+   *
+   * @category File System
+   */
+  public writeFileOPFS = (
+    path: string,
+    data: FileData,
+    { signal }: FFMessageOptions = {}
+  ): Promise<OK> => {
+    const trans: Transferable[] = [];
+    if (data instanceof Uint8Array) {
+      trans.push(data.buffer);
+    }
+    return this.#send(
+      {
+        type: FFMessageType.WRITE_FILE_OPFS,
+        data: { path, data },
+      },
+      trans,
+      signal
+    ) as Promise<OK>;
+  };
+
+  /**
+   * Return a file size without reading the file into JS memory.
+   *
+   * @category File System
+   */
+  public fileSize = (
+    path: FFFSPath,
+    { signal }: FFMessageOptions = {}
+  ): Promise<number> =>
+    this.#send(
+      {
+        type: FFMessageType.FILE_SIZE,
+        data: { path },
+      },
+      undefined,
+      signal
+    ) as Promise<number>;
+
+  /**
+   * Read a bounded file slice. Use this for large OPFS outputs instead
+   * of `readFile()` when building a Blob or stream in chunks.
+   *
+   * @category File System
+   */
+  public readFileChunk = (
+    path: FFFSPath,
+    offset: number,
+    length: number,
+    { signal }: FFMessageOptions = {}
+  ): Promise<Uint8Array> =>
+    this.#send(
+      {
+        type: FFMessageType.READ_FILE_CHUNK,
+        data: { path, offset, length },
+      },
+      undefined,
+      signal
+    ) as Promise<Uint8Array>;
 
   /**
    * Read data from ffmpeg.wasm.

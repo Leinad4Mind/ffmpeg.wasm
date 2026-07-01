@@ -107,6 +107,29 @@ export interface FFMessageUnmountData {
   mountPoint: FFFSPath;
 }
 
+export interface FFMessageMountOPFSData {
+  mountPoint?: FFFSPath;
+}
+
+export interface FFMessageMkdirpData {
+  path: FFFSPath;
+}
+
+export interface FFMessageWriteFileOPFSData {
+  path: FFFSPath;
+  data: FileData;
+}
+
+export interface FFMessageFileSizeData {
+  path: FFFSPath;
+}
+
+export interface FFMessageReadFileChunkData {
+  path: FFFSPath;
+  offset: number;
+  length: number;
+}
+
 export type FFMessageData =
   | FFMessageLoadConfig
   | FFMessageExecData
@@ -118,7 +141,12 @@ export type FFMessageData =
   | FFMessageListDirData
   | FFMessageDeleteDirData
   | FFMessageMountData
-  | FFMessageUnmountData;
+  | FFMessageUnmountData
+  | FFMessageMountOPFSData
+  | FFMessageMkdirpData
+  | FFMessageWriteFileOPFSData
+  | FFMessageFileSizeData
+  | FFMessageReadFileChunkData;
 
 export interface Message {
   type: string;

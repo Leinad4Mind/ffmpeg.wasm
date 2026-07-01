@@ -16,12 +16,18 @@ import type {
   FFMessageDeleteDirData,
   FFMessageMountData,
   FFMessageUnmountData,
+  FFMessageMountOPFSData,
+  FFMessageMkdirpData,
+  FFMessageWriteFileOPFSData,
+  FFMessageFileSizeData,
+  FFMessageReadFileChunkData,
   CallbackData,
   IsFirst,
   OK,
   ExitCode,
   FSNode,
   FileData,
+  FFFSPath,
 } from "./types";
 import { CORE_URL, FFMessageType } from "./const.js";
 import {
@@ -163,6 +169,41 @@ const unmount = ({ mountPoint }: FFMessageUnmountData): OK => {
   return true;
 };
 
+const mountOPFS = async ({ mountPoint = "/opfs" }: FFMessageMountOPFSData): Promise<FFFSPath> => {
+  if (typeof ffmpeg.mountOPFS !== "function") {
+    throw new Error("mountOPFS is not available in this ffmpeg-core build");
+  }
+  return ffmpeg.mountOPFS(mountPoint);
+};
+
+const mkdirp = async ({ path }: FFMessageMkdirpData): Promise<OK> => {
+  if (typeof ffmpeg.mkdirp !== "function") {
+    throw new Error("mkdirp is not available in this ffmpeg-core build");
+  }
+  return ffmpeg.mkdirp(path);
+};
+
+const writeFileOPFS = async ({ path, data }: FFMessageWriteFileOPFSData): Promise<OK> => {
+  if (typeof ffmpeg.writeFileOPFS !== "function") {
+    throw new Error("writeFileOPFS is not available in this ffmpeg-core build");
+  }
+  return ffmpeg.writeFileOPFS(path, data);
+};
+
+const fileSize = async ({ path }: FFMessageFileSizeData): Promise<number> => {
+  if (typeof ffmpeg.fileSize !== "function") {
+    throw new Error("fileSize is not available in this ffmpeg-core build");
+  }
+  return ffmpeg.fileSize(path);
+};
+
+const readFileChunk = async ({ path, offset, length }: FFMessageReadFileChunkData): Promise<Uint8Array> => {
+  if (typeof ffmpeg.readFileChunk !== "function") {
+    throw new Error("readFileChunk is not available in this ffmpeg-core build");
+  }
+  return ffmpeg.readFileChunk(path, offset, length);
+};
+
 self.onmessage = async ({
   data: { id, type, data: _data },
 }: FFMessageEvent): Promise<void> => {
@@ -207,6 +248,21 @@ self.onmessage = async ({
         break;
       case FFMessageType.UNMOUNT:
         data = unmount(_data as FFMessageUnmountData);
+        break;
+      case FFMessageType.MOUNT_OPFS:
+        data = await mountOPFS(_data as FFMessageMountOPFSData);
+        break;
+      case FFMessageType.MKDIRP:
+        data = await mkdirp(_data as FFMessageMkdirpData);
+        break;
+      case FFMessageType.WRITE_FILE_OPFS:
+        data = await writeFileOPFS(_data as FFMessageWriteFileOPFSData);
+        break;
+      case FFMessageType.FILE_SIZE:
+        data = await fileSize(_data as FFMessageFileSizeData);
+        break;
+      case FFMessageType.READ_FILE_CHUNK:
+        data = await readFileChunk(_data as FFMessageReadFileChunkData);
         break;
       default:
         throw ERROR_UNKNOWN_MESSAGE_TYPE;

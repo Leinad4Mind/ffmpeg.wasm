@@ -32,6 +32,18 @@ describe(
     "FFmpeg directory APIs (createDir(), listDir(), deleteDir(), rename())"
   ),
   function () {
+    it("should list root dir", async () => {
+      const files = await ffmpeg.listDir("/");
+      expect(files.length).to.be.greaterThan(0);
+    });
+
+    it("should expose OPFS helpers", () => {
+      expect(ffmpeg.mountOPFS).to.be.a("function");
+      expect(ffmpeg.mkdirp).to.be.a("function");
+      expect(ffmpeg.writeFileOPFS).to.be.a("function");
+      expect(ffmpeg.fileSize).to.be.a("function");
+      expect(ffmpeg.readFileChunk).to.be.a("function");
+    });
     it("should create a dir", async () => {
       await ffmpeg.createDir("/dir1");
       const files = await ffmpeg.listDir("/");
