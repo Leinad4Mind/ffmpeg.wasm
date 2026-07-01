@@ -12,3 +12,6 @@ build-cache-mt/
 
 # Local Netlify folder
 .netlify
+
+.actrc
+.act-artifacts/
