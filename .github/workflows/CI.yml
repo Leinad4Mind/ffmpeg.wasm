@@ -24,10 +24,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build-cache-st
-          key: build-cache-st-v1-${{ hashFiles('Dockerfile', 'Makefile', 'build/*') }}
+          key: build-cache-st-mem64-v2-${{ hashFiles('Dockerfile', 'Makefile', 'build/*', 'src/bind/**', 'src/fftools/**') }}
           restore-keys: |
-            build-cache-st-v1-
-      - name: Build ffmpeg-core
+            build-cache-st-mem64-v2-
+      - name: Build ffmpeg-core (memory64)
         run: make prd EXTRA_ARGS="--cache-from=type=local,src=build-cache-st --cache-to=type=local,dest=build-cache-st,mode=max"
       - name: Upload core
         uses: actions/upload-artifact@v4
