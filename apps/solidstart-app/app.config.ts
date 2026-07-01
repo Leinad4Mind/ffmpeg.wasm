@@ -7,7 +7,7 @@ export default defineConfig({
     },
     vite: {
         optimizeDeps: {
-            exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util']
+            exclude: ['@ffmpeg-wasm-browser/ffmpeg', '@ffmpeg/util']
         },
     }
 });

@@ -1,4 +1,4 @@
-import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { FFmpeg } from '@ffmpeg-wasm-browser/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import { createSignal, Show } from 'solid-js';
 

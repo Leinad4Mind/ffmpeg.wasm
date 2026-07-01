@@ -4,9 +4,9 @@ const fs = require("fs");
 const NPM_URL = "https://registry.npmjs.org";
 const ROOT = "public/assets";
 
-const FFMPEG_VERSION = "0.12.15";
+const FFMPEG_VERSION = "0.1.0";
 const UTIL_VERSION = "0.12.2";
-const CORE_VERSION = "0.12.10";
+const CORE_VERSION = "0.1.0";
 const CORE_MT_VERSION = "0.12.10";
 
 const FFMPEG_TGZ = `ffmpeg-${FFMPEG_VERSION}.tgz`;
@@ -14,9 +14,9 @@ const UTIL_TGZ = `util-${UTIL_VERSION}.tgz`;
 const CORE_TGZ = `core-${CORE_VERSION}.tgz`;
 const CORE_MT_TGZ = `core-mt-${CORE_MT_VERSION}.tgz`;
 
-const FFMPEG_TGZ_URL = `${NPM_URL}/@ffmpeg/ffmpeg/-/${FFMPEG_TGZ}`;
+const FFMPEG_TGZ_URL = `${NPM_URL}/@ffmpeg-wasm-browser/ffmpeg/-/${FFMPEG_TGZ}`;
 const UTIL_TGZ_URL = `${NPM_URL}/@ffmpeg/util/-/${UTIL_TGZ}`;
-const CORE_TGZ_URL = `${NPM_URL}/@ffmpeg/core/-/${CORE_TGZ}`;
+const CORE_TGZ_URL = `${NPM_URL}/@ffmpeg-wasm-browser/core/-/${CORE_TGZ}`;
 const CORE_MT_TGZ_URL = `${NPM_URL}/@ffmpeg/core-mt/-/${CORE_MT_TGZ}`;
 
 const mkdir = (dir) => {

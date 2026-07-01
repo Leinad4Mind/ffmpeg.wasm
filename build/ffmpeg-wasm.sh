@@ -33,7 +33,7 @@ CONF_FLAGS=(
   -sMEMORY64=1                             # enable 64-bit wasm memory
   -sWASM_BIGINT                            # i64 values across JS<->wasm cross as BigInt (needed for MEMORY64)
   -sWASMFS                                 # use the wasm-native filesystem layer
-  -sFORCE_FILESYSTEM                       # keep the JS FS API used by @ffmpeg/ffmpeg and the extension
+  -sFORCE_FILESYSTEM                       # keep the JS FS API used by @ffmpeg-wasm-browser/ffmpeg and the extension
   -sJSPI                                   # OPFS-backed WasmFS operations are async under the hood
   -sJSPI_EXPORTS=ffmpeg,ffprobe,ffwasm_mount_opfs,ffwasm_mkdirp,ffwasm_write_file,ffwasm_file_size,ffwasm_read_file_chunk
   -sUSE_SDL=2                              # use emscripten SDL2 lib port
