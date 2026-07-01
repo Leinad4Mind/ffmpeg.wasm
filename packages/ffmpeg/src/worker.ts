@@ -98,17 +98,17 @@ const load = async ({
   return first;
 };
 
-const exec = ({ args, timeout = -1 }: FFMessageExecData): ExitCode => {
+const exec = async ({ args, timeout = -1 }: FFMessageExecData): Promise<ExitCode> => {
   ffmpeg.setTimeout(timeout);
-  ffmpeg.exec(...args);
+  await ffmpeg.exec(...args);
   const ret = ffmpeg.ret;
   ffmpeg.reset();
   return ret;
 };
 
-const ffprobe = ({ args, timeout = -1 }: FFMessageExecData): ExitCode => {
+const ffprobe = async ({ args, timeout = -1 }: FFMessageExecData): Promise<ExitCode> => {
   ffmpeg.setTimeout(timeout);
-  ffmpeg.ffprobe(...args);
+  await ffmpeg.ffprobe(...args);
   const ret = ffmpeg.ret;
   ffmpeg.reset();
   return ret;
@@ -217,10 +217,10 @@ self.onmessage = async ({
         data = await load(_data as FFMessageLoadConfig);
         break;
       case FFMessageType.EXEC:
-        data = exec(_data as FFMessageExecData);
+        data = await exec(_data as FFMessageExecData);
         break;
       case FFMessageType.FFPROBE:
-        data = ffprobe(_data as FFMessageExecData);
+        data = await ffprobe(_data as FFMessageExecData);
         break;
       case FFMessageType.WRITE_FILE:
         data = writeFile(_data as FFMessageWriteFileData);
