@@ -124,3 +124,31 @@ describe(genName("FFmpeg.exec()"), function () {
     });
   });
 });
+
+// Clip-editor operations: lossless cut + concat (the browser-side workload).
+// NOTE: multi-input filtergraphs (xfade transitions, concat filter, overlay)
+// deadlock on the MT 7.x core in wasm and must run server-side — see the
+// Phase 3 handoff. Only stream-copy stitching is exercised here.
+describe(genName("FFmpeg clip operations"), function () {
+  it("should losslessly cut a segment (-ss/-t -c copy)", async () => {
+    const ret = await ffmpeg.exec([
+      "-ss", "0", "-i", "video.mp4", "-t", "0.5", "-c", "copy", "cut.mp4",
+    ]);
+    expect(ret).to.equal(0);
+    const out = await ffmpeg.readFile("cut.mp4");
+    expect(out.length).to.be.greaterThan(0);
+  });
+
+  it("should losslessly concat clips (-f concat -c copy)", async () => {
+    await ffmpeg.writeFile("clipA.mp4", b64ToUint8Array(VIDEO_1S_MP4));
+    await ffmpeg.writeFile("clipB.mp4", b64ToUint8Array(VIDEO_1S_MP4));
+    await ffmpeg.writeFile("concat.txt", "file 'clipA.mp4'\nfile 'clipB.mp4'\n");
+    const ret = await ffmpeg.exec([
+      "-f", "concat", "-safe", "0", "-i", "concat.txt", "-c", "copy", "joined.mp4",
+    ]);
+    expect(ret).to.equal(0);
+    const joined = await ffmpeg.readFile("joined.mp4");
+    const single = await ffmpeg.readFile("clipA.mp4");
+    expect(joined.length).to.be.greaterThan(single.length);
+  });
+});
