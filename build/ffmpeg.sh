@@ -30,4 +30,7 @@ CONF_FLAGS=(
 )
 
 emconfigure ./configure "${CONF_FLAGS[@]}" $@
-emmake make -j
+# Cap parallelism: unbounded `make -j` spawns one clang per libavfilter TU and
+# OOM-kills individual compilers when the toolchain runs under x86 emulation
+# (amd64-only emsdk on arm64 hosts). Override with FFMPEG_JOBS if desired.
+emmake make -j"${FFMPEG_JOBS:-4}"
