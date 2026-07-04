@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <emscripten.h>
 
 #if HAVE_IO_H
 #include <io.h>
@@ -545,6 +546,22 @@ void update_benchmark(const char *fmt, ...)
     }
 }
 
+/* Bridges to the JS layer (see src/bind/ffmpeg/bind.js). */
+EM_JS(void, send_progress, (double progress, double time), {
+    Module.receiveProgress(progress, time);
+});
+
+/* Returns 1 when the current run has exceeded Module.timeout (ms). -1 disables. */
+EM_JS(int, is_timeout, (int64_t diff), {
+    if (Module.timeout === -1) return 0;
+    return Module.timeout <= diff;
+});
+
+/* Module.timeout in ms (-1 = none); used to tighten the transcode poll period. */
+EM_JS(int, get_timeout, (), {
+    return Module.timeout;
+});
+
 static void print_report(int is_last_report, int64_t timer_start, int64_t cur_time, int64_t pts)
 {
     AVBPrint buf, buf_script;
@@ -560,6 +577,23 @@ static void print_report(int is_last_report, int64_t timer_start, int64_t cur_ti
     const char *hours_sign;
     int ret;
     float t;
+
+    /* Report progress to JS before the stats-gated early return so it fires
+     * regardless of -stats. Uses the longest input duration; accurate when
+     * input and output durations match (the common transcode/clip case). */
+    {
+        int64_t duration = -1;
+        int64_t pts_abs = FFABS(pts);
+        for (int i = 0; i < nb_input_files; i++) {
+            int64_t file_duration = input_files[i]->ctx->duration;
+            if (file_duration > duration)
+                duration = file_duration;
+        }
+        if (duration > 0)
+            send_progress((double)pts_abs / (double)duration, (double)pts_abs);
+        if (is_last_report)
+            send_progress(1, (double)pts_abs);
+    }
 
     if (!print_stats && !is_last_report && !progress_avio)
         return;
@@ -853,6 +887,7 @@ static int check_keyboard_interaction(int64_t cur_time)
 static int transcode(Scheduler *sch)
 {
     int ret = 0;
+    int timed_out = 0;
     int64_t timer_start, transcode_ts = 0;
 
     print_stream_maps();
@@ -869,8 +904,28 @@ static int transcode(Scheduler *sch)
 
     timer_start = av_gettime_relative();
 
-    while (!sch_wait(sch, stats_period, &transcode_ts)) {
+    /* When a timeout is set, poll the scheduler at (at most) the timeout period
+     * so it can be enforced promptly — 7.x's scheduler loop otherwise wakes only
+     * every stats_period (~0.5s), too coarse for short timeouts. print_report
+     * rate-limits itself internally, so stats cadence is unaffected. */
+    int64_t poll_period = stats_period;
+    {
+        int64_t to_ms = get_timeout();
+        if (to_ms >= 0) {
+            int64_t to_us = to_ms * 1000;
+            if (to_us < 1000) to_us = 1000;          /* floor at 1ms */
+            if (to_us < poll_period) poll_period = to_us;
+        }
+    }
+
+    while (!sch_wait(sch, poll_period, &transcode_ts)) {
         int64_t cur_time= av_gettime_relative();
+
+        /* stop if the run exceeded the caller-supplied timeout (ms) */
+        if (is_timeout((cur_time - timer_start) / 1000)) {
+            timed_out = 1;
+            break;
+        }
 
         if (received_nb_signals)
             break;
@@ -896,6 +951,11 @@ static int transcode(Scheduler *sch)
 
     /* dump report by using the first video and audio streams */
     print_report(1, timer_start, av_gettime_relative(), transcode_ts);
+
+    /* Surface a timeout as exit code 1 (7.x has no exit_program()); bind.js
+     * captures ffmpeg()'s return value as Module.ret. */
+    if (timed_out)
+        ret = 1;
 
     return ret;
 }
