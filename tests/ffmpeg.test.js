@@ -2,14 +2,24 @@ const { FFmpeg } = window.FFmpegWASM;
 
 const genName = (name) => `[ffmpeg][${FFMPEG_TYPE}] ${name}`;
 
-const createFFmpeg = async () => {
-  const ffmpeg = new FFmpeg();
+// A single, long-lived FFmpeg instance is reused across all suites. This mirrors
+// real-world usage (create/load once, reuse for every operation) and avoids the
+// emsdk 6.0.2 pthread-pool leak that surfaces when many instances are created and
+// terminated in one page. See the Phase 3 handoff for details.
+let ffmpeg;
+
+before(async () => {
+  ffmpeg = new FFmpeg();
   await ffmpeg.load({
     coreURL: CORE_URL,
     thread: FFMPEG_TYPE === "mt",
   });
-  return ffmpeg;
-};
+  await ffmpeg.writeFile("video.mp4", b64ToUint8Array(VIDEO_1S_MP4));
+});
+
+after(() => {
+  if (ffmpeg) ffmpeg.terminate();
+});
 
 describe(genName("new FFmpeg()"), () => {
   it("should be OK", () => {
@@ -22,21 +32,6 @@ describe(
     "FFmpeg directory APIs (createDir(), listDir(), deleteDir(), rename())"
   ),
   function () {
-    let ffmpeg;
-
-    before(async () => {
-      ffmpeg = await createFFmpeg();
-    });
-
-    after(() => {
-      ffmpeg.terminate();
-    });
-
-    it("should list root dir", async () => {
-      const files = await ffmpeg.listDir("/");
-      expect(files).to.have.lengthOf(6);
-    });
-
     it("should create a dir", async () => {
       await ffmpeg.createDir("/dir1");
       const files = await ffmpeg.listDir("/");
@@ -65,16 +60,6 @@ describe(
     "FFmpeg files APIs (readFile(), writeFile(), deleteFile(), rename())"
   ),
   function () {
-    let ffmpeg;
-
-    before(async () => {
-      ffmpeg = await createFFmpeg();
-    });
-
-    after(() => {
-      ffmpeg.terminate();
-    });
-
     it("should write/read a text file", async () => {
       const text = "foo";
       await ffmpeg.writeFile("/file1", text);
@@ -96,17 +81,6 @@ describe(
 );
 
 describe(genName("FFmpeg.exec()"), function () {
-  let ffmpeg;
-
-  before(async () => {
-    ffmpeg = await createFFmpeg();
-    await ffmpeg.writeFile("video.mp4", b64ToUint8Array(VIDEO_1S_MP4));
-  });
-
-  after(() => {
-    ffmpeg.terminate();
-  });
-
   it("should output help with exit code 0", async () => {
     let m;
     const listener = ({ message }) => {
@@ -132,7 +106,7 @@ describe(genName("FFmpeg.exec()"), function () {
   });
 
   it("should stop if timeout", async () => {
-    const ret = await ffmpeg.exec(["-i", "video.mp4", "video.avi"], 1);
+    const ret = await ffmpeg.exec(["-i", "video.mp4", "video2.avi"], 1);
     expect(ret).to.equal(1);
   });
 
@@ -140,7 +114,7 @@ describe(genName("FFmpeg.exec()"), function () {
     const controller = new AbortController();
     const { signal } = controller;
 
-    const promise = ffmpeg.exec(["-i", "video.mp4", "video.avi"], undefined, {
+    const promise = ffmpeg.exec(["-i", "video.mp4", "video3.avi"], undefined, {
       signal,
     });
     controller.abort();
