@@ -25,8 +25,9 @@ RUN apt-get update && \
 
 # Build x264
 FROM emsdk-base AS x264-builder
-ENV X264_BRANCH=4-cores
-ADD https://github.com/ffmpegwasm/x264.git#$X264_BRANCH /src
+# Pinned to the 4-cores branch HEAD by commit SHA (was a floating branch).
+ENV X264_REF=33cac6b77d5b9259c552156013a817ab23119612
+ADD https://github.com/ffmpegwasm/x264.git#$X264_REF /src
 COPY build/x264.sh /src/build.sh
 RUN bash -x /src/build.sh
 
@@ -39,8 +40,9 @@ RUN bash -x /src/build.sh
 
 # Build lame
 FROM emsdk-base AS lame-builder
-ENV LAME_BRANCH=master
-ADD https://github.com/ffmpegwasm/lame.git#$LAME_BRANCH /src
+# Pinned to master HEAD by commit SHA (was a floating branch).
+ENV LAME_REF=2badea1974ae36cb8312afe99cff1e6b3b5decee
+ADD https://github.com/ffmpegwasm/lame.git#$LAME_REF /src
 COPY build/lame.sh /src/build.sh
 RUN bash -x /src/build.sh
 
@@ -53,8 +55,10 @@ RUN bash -x /src/build.sh
 
 # Build zlib
 FROM emsdk-base AS zlib-builder
-ENV ZLIB_BRANCH=v1.2.11
-ADD https://github.com/ffmpegwasm/zlib.git#$ZLIB_BRANCH /src
+# zlib 1.3.1 from upstream (fixes CVE-2018-25032, CVE-2022-37434). The
+# ffmpegwasm fork has no 1.3.1 tag; pinned to the v1.3.1 commit SHA.
+ENV ZLIB_REF=925af44f3cde53c6b076611c297850091b5dc7bb
+ADD https://github.com/madler/zlib.git#$ZLIB_REF /src
 COPY build/zlib.sh /src/build.sh
 RUN bash -x /src/build.sh
 
