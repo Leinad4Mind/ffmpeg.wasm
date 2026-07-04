@@ -944,12 +944,33 @@ static int64_t getmaxrss(void)
 #endif
 }
 
+/* init_globals() resets the module-level state that FFmpeg's CLI normally
+ * relies on process teardown to clear. ffmpeg_cleanup() frees the arrays but
+ * leaves the nb_* counts and the transcode flags set, so a second _ffmpeg()
+ * call in this long-lived WASM module would run against stale state and hang.
+ * Reset everything to its initial value at the top of every invocation. */
+static void init_globals(void)
+{
+    input_files  = NULL; nb_input_files   = 0;
+    output_files = NULL; nb_output_files  = 0;
+    filtergraphs = NULL; nb_filtergraphs  = 0;
+    decoders     = NULL; nb_decoders      = 0;
+    atomic_store(&nb_output_dumped, 0);
+    atomic_store(&transcode_init_done, 0);
+    copy_ts_first_pts   = AV_NOPTS_VALUE;
+    received_sigterm    = 0;
+    received_nb_signals = 0;
+    ffmpeg_exited       = 0;
+}
+
 /* main() is renamed to ffmpeg() and exported so the WASM module can invoke it
  * repeatedly via _ffmpeg(). emcc treats a real main() specially (esp. under
  * pthreads/proxy-to-pthread), which we must avoid for a long-lived module. */
 int ffmpeg(int argc, char **argv)
 {
     Scheduler *sch = NULL;
+
+    init_globals();
 
     int ret;
     BenchmarkTimeStamps ti;
