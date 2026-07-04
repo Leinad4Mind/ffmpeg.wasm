@@ -1,7 +1,11 @@
 # syntax=docker/dockerfile-upstream:master-labs
 
 # Base emsdk image with environment variables.
-FROM emscripten/emsdk:3.1.40 AS emsdk-base
+# Pinned to emscripten/emsdk:latest by manifest-list digest = Emscripten 6.0.2.
+# Rationale: only the `latest` tag is multi-arch (arm64+amd64); every versioned
+# emsdk tag is amd64-only, which forced slow, OOM-prone x86 emulation on Apple
+# Silicon. Pinning the list digest keeps builds reproducible AND native per-arch.
+FROM emscripten/emsdk@sha256:644883f58ca15c38c8be59b3a727ba0eff347729bc31d50a3348a6c9ed92bc07 AS emsdk-base
 ARG EXTRA_CFLAGS
 ARG EXTRA_LDFLAGS
 ARG FFMPEG_ST
@@ -25,13 +29,6 @@ FROM emsdk-base AS x264-builder
 ENV X264_BRANCH=4-cores
 ADD https://github.com/ffmpegwasm/x264.git#$X264_BRANCH /src
 COPY build/x264.sh /src/build.sh
-RUN bash -x /src/build.sh
-
-# Build x265
-FROM emsdk-base AS x265-builder
-ENV X265_BRANCH=3.4
-ADD https://github.com/ffmpegwasm/x265.git#$X265_BRANCH /src
-COPY build/x265.sh /src/build.sh
 RUN bash -x /src/build.sh
 
 # Build libvpx
@@ -137,7 +134,6 @@ FROM emsdk-base AS ffmpeg-base
 RUN embuilder build sdl2 sdl2-mt
 ADD https://github.com/FFmpeg/FFmpeg.git#$FFMPEG_VERSION /src
 COPY --from=x264-builder $INSTALL_DIR $INSTALL_DIR
-COPY --from=x265-builder $INSTALL_DIR $INSTALL_DIR
 COPY --from=libvpx-builder $INSTALL_DIR $INSTALL_DIR
 COPY --from=lame-builder $INSTALL_DIR $INSTALL_DIR
 COPY --from=opus-builder $INSTALL_DIR $INSTALL_DIR
@@ -153,7 +149,6 @@ COPY build/ffmpeg.sh /src/build.sh
 RUN bash -x /src/build.sh \
       --enable-gpl \
       --enable-libx264 \
-      --enable-libx265 \
       --enable-libvpx \
       --enable-libmp3lame \
       --enable-libtheora \
@@ -174,7 +169,6 @@ COPY build/ffmpeg-wasm.sh build.sh
 # libraries to link
 ENV FFMPEG_LIBS \
       -lx264 \
-      -lx265 \
       -lvpx \
       -lmp3lame \
       -logg \
