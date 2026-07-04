@@ -31,12 +31,12 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
-      # Build the JS packages (@ffmpeg/ffmpeg, @ffmpeg/util). npm ci also fetches
+      # Build the JS packages (@ffmpeg/ffmpeg, @ffmpeg/util). npm install --no-audit --no-fund also fetches
       # the headless Chromium that mocha-headless-chrome (puppeteer) drives.
       - name: Build JS packages
         run: npm run build
@@ -72,11 +72,11 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install + build JS packages
         run: |
-          npm ci
+          npm install --no-audit --no-fund
           npm run build
 
       - name: Package vendorable artifacts
