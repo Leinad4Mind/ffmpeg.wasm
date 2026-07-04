@@ -44,34 +44,11 @@ ADD https://github.com/ffmpegwasm/lame.git#$LAME_BRANCH /src
 COPY build/lame.sh /src/build.sh
 RUN bash -x /src/build.sh
 
-# Build ogg
-FROM emsdk-base AS ogg-builder
-ENV OGG_BRANCH=v1.3.4
-ADD https://github.com/ffmpegwasm/Ogg.git#$OGG_BRANCH /src
-COPY build/ogg.sh /src/build.sh
-RUN bash -x /src/build.sh
-
-# Build theora
-FROM emsdk-base AS theora-builder
-COPY --from=ogg-builder $INSTALL_DIR $INSTALL_DIR
-ENV THEORA_BRANCH=v1.1.1
-ADD https://github.com/ffmpegwasm/theora.git#$THEORA_BRANCH /src
-COPY build/theora.sh /src/build.sh
-RUN bash -x /src/build.sh
-
 # Build opus
 FROM emsdk-base AS opus-builder
 ENV OPUS_BRANCH=v1.3.1
 ADD https://github.com/ffmpegwasm/opus.git#$OPUS_BRANCH /src
 COPY build/opus.sh /src/build.sh
-RUN bash -x /src/build.sh
-
-# Build vorbis
-FROM emsdk-base AS vorbis-builder
-COPY --from=ogg-builder $INSTALL_DIR $INSTALL_DIR
-ENV VORBIS_BRANCH=v1.3.3
-ADD https://github.com/ffmpegwasm/vorbis.git#$VORBIS_BRANCH /src
-COPY build/vorbis.sh /src/build.sh
 RUN bash -x /src/build.sh
 
 # Build zlib
@@ -136,8 +113,6 @@ COPY --from=x264-builder $INSTALL_DIR $INSTALL_DIR
 COPY --from=libvpx-builder $INSTALL_DIR $INSTALL_DIR
 COPY --from=lame-builder $INSTALL_DIR $INSTALL_DIR
 COPY --from=opus-builder $INSTALL_DIR $INSTALL_DIR
-COPY --from=theora-builder $INSTALL_DIR $INSTALL_DIR
-COPY --from=vorbis-builder $INSTALL_DIR $INSTALL_DIR
 COPY --from=libwebp-builder $INSTALL_DIR $INSTALL_DIR
 COPY --from=libass-builder $INSTALL_DIR $INSTALL_DIR
 COPY --from=zimg-builder $INSTALL_DIR $INSTALL_DIR
@@ -150,8 +125,6 @@ RUN bash -x /src/build.sh \
       --enable-libx264 \
       --enable-libvpx \
       --enable-libmp3lame \
-      --enable-libtheora \
-      --enable-libvorbis \
       --enable-libopus \
       --enable-zlib \
       --enable-libwebp \
@@ -170,11 +143,6 @@ ENV FFMPEG_LIBS \
       -lx264 \
       -lvpx \
       -lmp3lame \
-      -logg \
-      -ltheora \
-      -lvorbis \
-      -lvorbisenc \
-      -lvorbisfile \
       -lopus \
       -lz \
       -lwebpmux \
