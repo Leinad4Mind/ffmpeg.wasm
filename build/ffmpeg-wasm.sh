@@ -8,9 +8,10 @@ set -euo pipefail
 EXPORT_NAME="createFFmpegCore"
 
 CONF_FLAGS=(
-  -I. 
-  -I./src/fftools 
-  -I$INSTALL_DIR/include 
+  -I.
+  -I./src/fftools
+  -I./compat/stdbit                       # FFmpeg 7.x fftools use C23 <stdbit.h>; emsdk lacks it, use FFmpeg's compat fallback
+  -I$INSTALL_DIR/include
   -L$INSTALL_DIR/lib 
   -Llibavcodec 
   -Llibavdevice 
@@ -43,15 +44,24 @@ CONF_FLAGS=(
   -sEXPORTED_RUNTIME_METHODS=$(node src/bind/ffmpeg/export-runtime.js) # exported built-in functions
   -lworkerfs.js
   --pre-js src/bind/ffmpeg/bind.js        # extra bindings, contains most of the ffmpeg.wasm javascript code
-  # ffmpeg source code
-  src/fftools/cmdutils.c 
-  src/fftools/ffmpeg.c 
-  src/fftools/ffmpeg_filter.c 
-  src/fftools/ffmpeg_hw.c 
-  src/fftools/ffmpeg_mux.c 
-  src/fftools/ffmpeg_opt.c 
-  src/fftools/opt_common.c 
-  src/fftools/ffprobe.c 
+  # ffmpeg source code (FFmpeg 7.x fftools: scheduler-based frontend adds
+  # ffmpeg_dec/enc/demux/mux_init/sched + objpool/sync_queue/thread_queue)
+  src/fftools/cmdutils.c
+  src/fftools/ffmpeg.c
+  src/fftools/ffmpeg_dec.c
+  src/fftools/ffmpeg_demux.c
+  src/fftools/ffmpeg_enc.c
+  src/fftools/ffmpeg_filter.c
+  src/fftools/ffmpeg_hw.c
+  src/fftools/ffmpeg_mux.c
+  src/fftools/ffmpeg_mux_init.c
+  src/fftools/ffmpeg_opt.c
+  src/fftools/ffmpeg_sched.c
+  src/fftools/objpool.c
+  src/fftools/opt_common.c
+  src/fftools/sync_queue.c
+  src/fftools/thread_queue.c
+  src/fftools/ffprobe.c
 )
 
 emcc "${CONF_FLAGS[@]}" $@

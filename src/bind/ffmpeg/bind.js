@@ -55,7 +55,11 @@ function printErr(message) {
 function exec(..._args) {
   const args = [...Module["DEFAULT_ARGS"], ..._args];
   try {
-    Module["_ffmpeg"](args.length, stringsToPtr(args));
+    // FFmpeg 7.x removed exit_program(); main()/ffmpeg() now returns the exit
+    // code directly, so capture the return value instead of relying on a
+    // C-side EM_ASM setting Module.ret. The Aborted catch remains for the
+    // timeout path, which still abort()s.
+    Module["ret"] = Module["_ffmpeg"](args.length, stringsToPtr(args));
   } catch (e) {
     if (!e.message.startsWith("Aborted")) {
       throw e;
@@ -67,7 +71,7 @@ function exec(..._args) {
 function ffprobe(..._args) {
   const args = [...Module["DEFAULT_ARGS_FFPROBE"], ..._args];
   try {
-    Module["_ffprobe"](args.length, stringsToPtr(args));
+    Module["ret"] = Module["_ffprobe"](args.length, stringsToPtr(args));
   } catch (e) {
     if (!e.message.startsWith("Aborted")) {
       throw e;
