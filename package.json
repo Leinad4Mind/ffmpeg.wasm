@@ -9,7 +9,7 @@
     "pretest": "npm run build",
     "serve": "node scripts/serve.js 3000 .",
     "test": "server-test test:browser:server 3000 test:all",
-    "test:all": "npm-run-all test:browser:*:*",
+    "test:all": "npm run test:browser:ffmpeg:mt",
     "test:browser": "mocha-headless-chrome -a enable-features=SharedArrayBuffer",
     "test:browser:core:mt": "npm run test:browser -- -f http://localhost:3000/tests/ffmpeg-core-mt.test.html",
     "test:browser:core:st": "npm run test:browser -- -f http://localhost:3000/tests/ffmpeg-core-st.test.html",

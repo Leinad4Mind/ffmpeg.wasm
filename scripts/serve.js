@@ -43,6 +43,12 @@ const COI_HEADERS = {
 
 const server = http.createServer((req, res) => {
   const urlPath = decodeURIComponent(req.url.split("?")[0]);
+  // Health-check root: return 200 so start-server-and-test / wait-on consider
+  // the server ready (there is no index.html at the repo root).
+  if (urlPath === "/") {
+    res.writeHead(200, { ...COI_HEADERS, "Content-Type": "text/plain" });
+    return res.end("ffmpeg.wasm dev server (cross-origin isolated)");
+  }
   const filePath = path.join(ROOT, urlPath);
   // Prevent path traversal outside ROOT.
   if (!filePath.startsWith(ROOT)) {

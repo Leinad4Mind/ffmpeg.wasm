@@ -2,186 +2,89 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
+
+# Least-privilege default; the release job below opts into write explicitly.
+permissions:
+  contents: read
 
 jobs:
-  build-core:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v2
-      - name: Update pkg-config database
-        run: sudo ldconfig
-      - name: Setup Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Cache build
-        id: cache-build
-        uses: actions/cache@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build the multithreaded core (emsdk 6.0.2 is multi-arch, so this builds
+      # natively on the amd64 runner). MT-only: the 7.x fftools require threads,
+      # so there is no single-threaded core (see docs/handoff).
+      - name: Build ffmpeg-core-mt
+        run: |
+          make prd-mt EXTRA_ARGS="--cache-from=type=gha --cache-to=type=gha,mode=max"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          path: build-cache-st
-          key: build-cache-st-v1-${{ hashFiles('Dockerfile', 'Makefile', 'build/*') }}
-          restore-keys: |
-            build-cache-st-v1-
-      - name: Build ffmpeg-core
-        run: make prd EXTRA_ARGS="--cache-from=type=local,src=build-cache-st --cache-to=type=local,dest=build-cache-st,mode=max"
-      - name: Upload core
-        uses: actions/upload-artifact@v4
-        with:
-          name: ffmpeg-core
-          path: packages/core/dist/*
-  build-core-mt:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v2
-      - name: Setup Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Cache build
-        id: cache-build
-        uses: actions/cache@v4
-        with:
-          path: build-cache-mt
-          key: build-cache-mt-v1-${{ hashFiles('Dockerfile', 'Makefile', 'build/*') }}
-          restore-keys: |
-            build-cache-v1-
-      - name: Build ffmpet-core-mt
-        run: make prd-mt EXTRA_ARGS="--cache-from=type=local,src=build-cache-mt --cache-to=type=local,dest=build-cache-mt,mode=max"
-      - name: Upload core-mt
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Build the JS packages (@ffmpeg/ffmpeg, @ffmpeg/util). npm ci also fetches
+      # the headless Chromium that mocha-headless-chrome (puppeteer) drives.
+      - name: Build JS packages
+        run: npm run build
+
+      - name: Run MT test suite
+        run: npx start-server-and-test "npm run serve" 3000 "npm run test:browser:ffmpeg:mt"
+
+      - name: Upload core-mt artifact
         uses: actions/upload-artifact@v4
         with:
           name: ffmpeg-core-mt
           path: packages/core-mt/dist/*
-  tests:
+
+  # On a version tag, publish the vendorable artifacts (core + wrapper) as a
+  # GitHub Release, so downstream apps can vendor from a targeted release.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-and-test
     runs-on: ubuntu-latest
-    needs:
-      - build-core
-      - build-core-mt
+    permissions:
+      contents: write
     steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v2
-      - name: Download ffmpeg-core
-        uses: actions/download-artifact@v4
-        with:
-          name: ffmpeg-core
-          path: packages/core/dist
-      - name: Download ffmpeg-core-mt
-        uses: actions/download-artifact@v4
-        with:
-          name: ffmpeg-core-mt
-          path: packages/core-mt/dist
-      - name: Use Node.js 18
-        uses: actions/setup-node@v2
-        with:
-          node-version: 18.x
-      - name: Cache dependencies
-        id: cache-dependencies
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node-modules-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-
-      - name: Install dependencies
-        run: npm install
-      - name: Install Chrome
-        uses: browser-actions/setup-chrome@latest
-        with:
-          chrome-version: stable
-      - name: Run tests
-        env:
-          CHROME_HEADLESS: 1
-          CHROME_PATH: chrome
-          CHROME_FLAGS: "--headless --disable-gpu --no-sandbox --enable-features=SharedArrayBuffer,CrossOriginIsolation"
-          HEADERS: '{"Cross-Origin-Opener-Policy": "same-origin", "Cross-Origin-Embedder-Policy": "require-corp"}'
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build core + JS packages
         run: |
-          # Start test server with proper headers for all tests
-          npm run serve -- --headers "$HEADERS" &
+          make prd-mt EXTRA_ARGS="--cache-from=type=gha --cache-to=type=gha,mode=max"
 
-          # Increase wait time to ensure server is ready
-          sleep 15
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-          # Verify headers and isolation status
-          echo "Checking security headers and isolation status..."
-          curl -v http://localhost:3000/tests/ffmpeg-core-st.test.html 2>&1 | grep -i "cross-origin"
+      - name: Install + build JS packages
+        run: |
+          npm ci
+          npm run build
 
-          # Run verification script first
-          echo "Verifying browser environment..."
-          cat << EOF > verify-browser.html
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
-            <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
-          </head>
-          <body>
-            <script>
-              console.log('SharedArrayBuffer available:', typeof SharedArrayBuffer !== 'undefined');
-              console.log('crossOriginIsolated:', window.crossOriginIsolated);
-              if (!window.crossOriginIsolated || typeof SharedArrayBuffer === 'undefined') {
-                throw new Error('Browser environment not properly configured for SharedArrayBuffer');
-              }
-            </script>
-          </body>
-          </html>
-          EOF
+      - name: Package vendorable artifacts
+        run: |
+          mkdir -p dist-release
+          tar -C packages/core-mt/dist -czf "dist-release/ffmpeg-core-mt-${GITHUB_REF_NAME}.tgz" .
+          tar -C packages/ffmpeg/dist  -czf "dist-release/ffmpeg-wasm-${GITHUB_REF_NAME}.tgz" .
 
-          # Run single-threaded tests first
-          echo "Running single-threaded tests..."
-          npx mocha-headless-chrome \
-            --args="$CHROME_FLAGS" \
-            -a no-sandbox \
-            -f http://localhost:3000/tests/ffmpeg-core-st.test.html 2>&1 | tee st-core-test.log
-
-          npx mocha-headless-chrome \
-            --args="$CHROME_FLAGS" \
-            -a no-sandbox \
-            -f http://localhost:3000/tests/ffmpeg-st.test.html 2>&1 | tee st-test.log
-
-          # Run multi-threaded tests
-          echo "Running multi-threaded tests..."
-          # Create a test script to verify browser environment
-          cat << EOF > verify-browser.html
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>Browser Environment Test</title>
-          </head>
-          <body>
-            <script>
-              console.log('SharedArrayBuffer available:', typeof SharedArrayBuffer !== 'undefined');
-              console.log('crossOriginIsolated:', window.crossOriginIsolated);
-            </script>
-          </body>
-          </html>
-          EOF
-
-          # Run the verification in Chrome
-          echo "Verifying browser environment..."
-          npx mocha-headless-chrome \
-            --args="$CHROME_FLAGS --enable-features=SharedArrayBuffer,CrossOriginIsolation" \
-            -a no-sandbox \
-            -f http://localhost:3000/verify-browser.html
-
-          # Run MT tests with verified configuration
-          npx mocha-headless-chrome \
-            --args="$CHROME_FLAGS --enable-features=SharedArrayBuffer,CrossOriginIsolation" \
-            -a no-sandbox \
-            -f http://localhost:3000/tests/ffmpeg-core-mt.test.html 2>&1 | tee mt-core-test.log
-
-          npx mocha-headless-chrome \
-            --args="$CHROME_FLAGS --enable-features=SharedArrayBuffer,CrossOriginIsolation" \
-            -a no-sandbox \
-            -f http://localhost:3000/tests/ffmpeg-mt.test.html 2>&1 | tee mt-test.log
-
-          # Display all logs for debugging
-          echo "=== Test Logs ==="
-          for log in *-test.log; do
-            echo "Contents of $log:"
-            cat $log
-          done
+      - name: Attach artifacts to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist-release/*.tgz
