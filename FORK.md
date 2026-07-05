@@ -22,29 +22,48 @@ stitch clips in the browser. Built for **vendoring** (not npm-published).
 
 ## Release variants
 
-Each release ships two MT cores. Pick the smallest that covers your codecs:
+Each release ships two MT cores. Pick the smallest that covers your pipeline:
 
-| Variant | Codec libs | Wasm size | Vendor asset | Use when |
-|---------|-----------|-----------|--------------|----------|
-| **full** | x264, vpx, opus, mp3lame, webp, zimg + zlib + native AAC | ~25.3 MB | `ffmpeg-core-mt-<tag>.tgz` | general use / unknown codec needs |
-| **slim** | x264 + zlib + native AAC/H.264 | ~22.5 MB | `ffmpeg-core-mt-slim-<tag>.tgz` | H.264+AAC only: stream-copy, x264 re-encode, image-overlay watermark |
+| Variant | Build | Wasm size | Vendor asset | Use when |
+|---------|-------|-----------|--------------|----------|
+| **full** | all lean codecs enabled (x264, vpx, opus, mp3lame, webp, zimg + zlib + native AAC) | ~25.3 MB | `ffmpeg-core-mt-<tag>.tgz` | general use / unknown codec needs |
+| **slim** | `--disable-everything` + an allowlist for exactly one pipeline: H.264/AAC over mp4/ts | **~6 MB** | `ffmpeg-core-mt-slim-<tag>.tgz` | H.264+AAC only: stream-copy clip/concat, single-input x264 re-encode, re-encode stitch |
 
-Both are byte-identical at the wrapper/ABI level — same fftools frontend, same
-`_ffmpeg`/`_ffprobe` ABI, same postMessage contract. Slim just returns an error
-if asked for a dropped codec (VP8/VP9, Opus, MP3, WebP, zscale). `live-clipping-poc`
-vendors **slim**.
+Both are identical at the wrapper/ABI level — same fftools frontend, same
+`_ffmpeg`/`_ffprobe` ABI, same postMessage contract. Only the compiled-in
+component set differs.
+
+**Slim is `--disable-everything` + an allowlist** (see `build/ffmpeg.sh`): it
+strips ~all of FFmpeg's ~400 decoders / 350 demuxers / 130 filters and re-enables
+only the H.264/AAC + mp4/ts + concat components its consumer uses. That's where
+the 25 MB → 6 MB drop comes from — not the external codec libs (dropping those
+alone only saved ~3 MB). The trade-off is precision: slim **hangs** (does not
+error cleanly) if asked for a component it wasn't built with, so it must only be
+driven with its supported operations. Its gate is `tests/ffmpeg-slim.test.js`
+(run via `npm run test:browser:ffmpeg:slim`), not the generic suite (whose
+mp4→avi transcode needs the avi muxer/mpeg4 encoder slim drops).
+
+`live-clipping-poc` vendors **slim**.
 
 ## Capability map (what works in the browser)
+
+The dividing line is **single-input vs multi-input filtergraph**, not copy vs
+re-encode:
+
 | Operation | Status |
 |-----------|--------|
 | Cut / trim (`-ss`/`-t` `-c copy`) | ✅ |
-| Single-input transcode / re-encode | ✅ |
 | Lossless concat (`-f concat -c copy`) | ✅ |
-| **Multi-input filtergraph** (`xfade` transitions, concat *filter*, overlay) | ❌ deadlocks — **run server-side** |
+| Single-input re-encode (`-c:v libx264 -c:a aac`) | ✅ |
+| Re-encode **stitch** via concat *demuxer* (`-f concat -i list -c:v libx264 …`) | ✅ single input → one out |
+| **Multi-input filtergraph** — `overlay` (watermark), `xfade` (softened transitions), concat *filter* | ❌ deadlocks — **run server-side** |
 
 The multi-input deadlock is a scheduler-in-wasm limitation of the 7.x/8.x
-thread-based frontend (not thread-count). Softened transitions must be produced
-server-side.
+thread-based frontend (not thread-count), confirmed on 8.1.2. The concat
+*demuxer* feeds the encoder as one stream (works); the concat *filter* / `xfade`
+/ `overlay` open several inputs into one graph (deadlock). **Design consequence:**
+an app should do clip + stitch (copy or re-encode) in the browser, and produce
+**watermarked output and cross-faded transitions server-side.**
 
 ## Required headers (MT / SharedArrayBuffer)
 Serve the app's HTML with:

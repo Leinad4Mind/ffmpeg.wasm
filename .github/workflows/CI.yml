@@ -26,7 +26,7 @@ jobs:
       # so there is no single-threaded core (see docs/handoff).
       - name: Build ffmpeg-core-mt
         run: |
-          make prd-mt EXTRA_ARGS="--cache-from=type=gha --cache-to=type=gha,mode=max"
+          make prd-mt EXTRA_ARGS="--cache-from=type=gha,scope=core-mt --cache-to=type=gha,mode=max,scope=core-mt"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -50,11 +50,48 @@ jobs:
           name: ffmpeg-core-mt
           path: packages/core-mt/dist/*
 
+  # Slim variant gate (parallel with build-and-test — no added wall-clock). Builds
+  # the ~6 MB slim core and runs the slim app-ops suite (copy cut/concat, single-
+  # input libx264 re-encode, re-encode stitch). The generic MT suite can't gate
+  # slim: its mp4->avi transcode needs the avi muxer/mpeg4 encoder slim drops.
+  slim-build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ffmpeg-core-mt-slim
+        run: |
+          make prd-mt-slim EXTRA_ARGS="--cache-from=type=gha,scope=core-mt-slim --cache-to=type=gha,mode=max,scope=core-mt-slim"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build JS packages
+        run: npm run build
+
+      - name: Run slim app-ops suite
+        run: npx start-server-and-test "npm run serve" 3000 "npm run test:browser:ffmpeg:slim"
+
+      - name: Upload core-mt-slim artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-core-mt-slim
+          path: packages/core-mt-slim/dist/*
+
   # On a version tag, publish the vendorable artifacts (core + wrapper) as a
   # GitHub Release, so downstream apps can vendor from a targeted release.
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build-and-test
+    needs: [build-and-test, slim-build-and-test]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -67,8 +104,8 @@ jobs:
 
       - name: Build core + JS packages
         run: |
-          make prd-mt EXTRA_ARGS="--cache-from=type=gha --cache-to=type=gha,mode=max"
-          make prd-mt-slim EXTRA_ARGS="--cache-from=type=gha --cache-to=type=gha,mode=max"
+          make prd-mt EXTRA_ARGS="--cache-from=type=gha,scope=core-mt --cache-to=type=gha,mode=max,scope=core-mt"
+          make prd-mt-slim EXTRA_ARGS="--cache-from=type=gha,scope=core-mt-slim --cache-to=type=gha,mode=max,scope=core-mt-slim"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

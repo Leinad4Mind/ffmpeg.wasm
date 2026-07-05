@@ -14,6 +14,7 @@
     "test:browser:core:mt": "npm run test:browser -- -f http://localhost:3000/tests/ffmpeg-core-mt.test.html",
     "test:browser:core:st": "npm run test:browser -- -f http://localhost:3000/tests/ffmpeg-core-st.test.html",
     "test:browser:ffmpeg:mt": "npm run test:browser -- -f http://localhost:3000/tests/ffmpeg-mt.test.html",
+    "test:browser:ffmpeg:slim": "npm run test:browser -- -f http://localhost:3000/tests/ffmpeg-slim-mt.test.html",
     "test:browser:ffmpeg:st": "npm run test:browser -- -f http://localhost:3000/tests/ffmpeg-st.test.html",
     "test:browser:server": "npm run serve",
     "test:node": "mocha --exit --bail -t 60000",

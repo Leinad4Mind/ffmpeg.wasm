@@ -50,7 +50,24 @@ CONF_FLAGS=(
 CODEC_FLAGS=(--enable-gpl --enable-zlib --enable-libx264)
 case "${FFMPEG_VARIANT:-full}" in
   slim)
-    : # x264 + zlib only
+    # Aggressive size trim: disable ALL native components, then re-enable only
+    # what live-clipping-poc's pipeline needs — H.264/AAC over mp4/ts (stream-
+    # copy clip + concat), x264/AAC re-encode, and PNG-overlay watermark.
+    # --disable-everything must precede the --enable-*, so redefine CODEC_FLAGS.
+    CODEC_FLAGS=(
+      --disable-everything
+      --enable-gpl
+      --enable-zlib
+      --enable-libx264
+      --enable-protocol=file,pipe,data,concat,concatf
+      --enable-demuxer=mov,mpegts,concat,image2,png_pipe
+      --enable-muxer=mp4,mov,null
+      --enable-decoder=h264,aac,png
+      --enable-encoder=libx264,aac
+      --enable-parser=h264,aac,png
+      --enable-bsf=h264_mp4toannexb,aac_adtstoasc,extract_extradata,null
+      --enable-filter=overlay,scale,format,null,copy,aformat,anull,aresample,fps,setpts,asetpts,buffer,buffersink,abuffer,abuffersink
+    )
     ;;
   full)
     CODEC_FLAGS+=(
