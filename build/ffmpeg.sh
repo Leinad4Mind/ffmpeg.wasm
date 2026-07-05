@@ -43,7 +43,27 @@ CONF_FLAGS=(
   ${FFMPEG_ST:+ --disable-pthreads --disable-w32threads --disable-os2threads}
 )
 
-emconfigure ./configure "${CONF_FLAGS[@]}" $@
+# Codec set by variant (default full). Common to both: --enable-gpl (x264 is
+# GPL) and --enable-zlib (load-bearing — FFmpeg's PNG decoder needs zlib, and
+# the watermark is a PNG overlay). Slim keeps only x264 on top of that; full
+# adds the rest of the lean set.
+CODEC_FLAGS=(--enable-gpl --enable-zlib --enable-libx264)
+case "${FFMPEG_VARIANT:-full}" in
+  slim)
+    : # x264 + zlib only
+    ;;
+  *)
+    CODEC_FLAGS+=(
+      --enable-libvpx
+      --enable-libmp3lame
+      --enable-libopus
+      --enable-libwebp
+      --enable-libzimg
+    )
+    ;;
+esac
+
+emconfigure ./configure "${CONF_FLAGS[@]}" "${CODEC_FLAGS[@]}" $@
 # Cap parallelism: unbounded `make -j` spawns one clang per libavfilter TU and
 # OOM-kills individual compilers when the toolchain runs under x86 emulation
 # (amd64-only emsdk on arm64 hosts). Override with FFMPEG_JOBS if desired.

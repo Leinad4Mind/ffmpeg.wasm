@@ -10,6 +10,7 @@ ARG EXTRA_CFLAGS
 ARG EXTRA_LDFLAGS
 ARG FFMPEG_ST
 ARG FFMPEG_MT
+ARG FFMPEG_VARIANT=full
 ENV INSTALL_DIR=/opt
 ENV FFMPEG_VERSION=n8.1.2
 ENV CFLAGS="-I$INSTALL_DIR/include $CFLAGS $EXTRA_CFLAGS"
@@ -20,6 +21,7 @@ ENV EM_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscript
 ENV PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$EM_PKG_CONFIG_PATH
 ENV FFMPEG_ST=$FFMPEG_ST
 ENV FFMPEG_MT=$FFMPEG_MT
+ENV FFMPEG_VARIANT=$FFMPEG_VARIANT
 RUN apt-get update && \
       apt-get install -y pkg-config autoconf automake libtool ragel
 
@@ -92,37 +94,18 @@ COPY --from=zimg-builder $INSTALL_DIR $INSTALL_DIR
 # Build ffmpeg
 FROM ffmpeg-base AS ffmpeg-builder
 COPY build/ffmpeg.sh /src/build.sh
-RUN bash -x /src/build.sh \
-      --enable-gpl \
-      --enable-libx264 \
-      --enable-libvpx \
-      --enable-libmp3lame \
-      --enable-libopus \
-      --enable-zlib \
-      --enable-libwebp \
-      --enable-libzimg
+# Codec --enable flags are selected inside build.sh by $FFMPEG_VARIANT.
+RUN bash -x /src/build.sh
 
 # Build ffmpeg.wasm
 FROM ffmpeg-builder AS ffmpeg-wasm-builder
 COPY src/bind /src/src/bind
 COPY src/fftools /src/src/fftools
 COPY build/ffmpeg-wasm.sh build.sh
-# libraries to link
-ENV FFMPEG_LIBS \
-      -lx264 \
-      -lvpx \
-      -lmp3lame \
-      -lopus \
-      -lz \
-      -lwebpmux \
-      -lwebp \
-      -lsharpyuv \
-      -lzimg
+# Codec link libs are selected inside build.sh by $FFMPEG_VARIANT.
 RUN mkdir -p /src/dist/umd && bash -x /src/build.sh \
-      ${FFMPEG_LIBS} \
       -o dist/umd/ffmpeg-core.js
 RUN mkdir -p /src/dist/esm && bash -x /src/build.sh \
-      ${FFMPEG_LIBS} \
       -sEXPORT_ES6 \
       -o dist/esm/ffmpeg-core.js
 

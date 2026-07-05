@@ -76,7 +76,18 @@ CONF_FLAGS=(
   src/fftools/ffprobe.c
 )
 
-emcc "${CONF_FLAGS[@]}" $@
+# Codec link libs by variant (default full). Mirrors the --enable set chosen in
+# build/ffmpeg.sh. -lz is always present (PNG/zlib). Slim links only x264 + z.
+case "${FFMPEG_VARIANT:-full}" in
+  slim)
+    FFMPEG_LIBS=(-lx264 -lz)
+    ;;
+  *)
+    FFMPEG_LIBS=(-lx264 -lvpx -lmp3lame -lopus -lz -lwebpmux -lwebp -lsharpyuv -lzimg)
+    ;;
+esac
+
+emcc "${CONF_FLAGS[@]}" "${FFMPEG_LIBS[@]}" $@
 
 # Post-build patches to the emscripten output. Target only the -o file just
 # built (this script runs once per variant) so patches aren't double-applied.
