@@ -10,25 +10,23 @@ EXPORT_NAME="createFFmpegCore"
 CONF_FLAGS=(
   -I.
   -I./src/fftools
-  -I./compat/stdbit                       # FFmpeg 7.x fftools use C23 <stdbit.h>; emsdk lacks it, use FFmpeg's compat fallback
+  -I./compat/stdbit                       # FFmpeg 7.x/8.x fftools use C23 <stdbit.h>; emsdk lacks it, use FFmpeg's compat fallback
   -I$INSTALL_DIR/include
   -L$INSTALL_DIR/lib 
   -Llibavcodec 
   -Llibavdevice 
   -Llibavfilter 
-  -Llibavformat 
-  -Llibavutil 
-  -Llibpostproc 
-  -Llibswresample 
-  -Llibswscale 
-  -lavcodec 
-  -lavdevice 
-  -lavfilter 
-  -lavformat 
-  -lavutil 
-  -lpostproc 
-  -lswresample 
-  -lswscale 
+  -Llibavformat
+  -Llibavutil
+  -Llibswresample
+  -Llibswscale
+  -lavcodec
+  -lavdevice
+  -lavfilter
+  -lavformat
+  -lavutil
+  -lswresample
+  -lswscale
   -Wno-deprecated-declarations 
   $LDFLAGS 
   -sENVIRONMENT=worker
@@ -44,8 +42,11 @@ CONF_FLAGS=(
   -sEXPORTED_RUNTIME_METHODS=$(node src/bind/ffmpeg/export-runtime.js) # exported built-in functions
   -lworkerfs.js
   --pre-js src/bind/ffmpeg/bind.js        # extra bindings, contains most of the ffmpeg.wasm javascript code
-  # ffmpeg source code (FFmpeg 7.x fftools: scheduler-based frontend adds
-  # ffmpeg_dec/enc/demux/mux_init/sched + objpool/sync_queue/thread_queue)
+  # ffmpeg source code (FFmpeg 8.x fftools: scheduler-based frontend =
+  # ffmpeg_dec/enc/demux/mux_init/sched + sync_queue/thread_queue). vs 7.x:
+  # objpool.c was dropped (thread_queue now uses libavutil/container_fifo);
+  # ffprobe's writers were extracted into textformat/*; graph/graphprint.c is a
+  # fork stub (upstream needs the resources/resman resource-bundling pipeline).
   src/fftools/cmdutils.c
   src/fftools/ffmpeg.c
   src/fftools/ffmpeg_dec.c
@@ -57,10 +58,21 @@ CONF_FLAGS=(
   src/fftools/ffmpeg_mux_init.c
   src/fftools/ffmpeg_opt.c
   src/fftools/ffmpeg_sched.c
-  src/fftools/objpool.c
+  src/fftools/graph/graphprint.c
   src/fftools/opt_common.c
   src/fftools/sync_queue.c
   src/fftools/thread_queue.c
+  src/fftools/textformat/avtextformat.c
+  src/fftools/textformat/tf_compact.c
+  src/fftools/textformat/tf_default.c
+  src/fftools/textformat/tf_flat.c
+  src/fftools/textformat/tf_ini.c
+  src/fftools/textformat/tf_json.c
+  src/fftools/textformat/tf_mermaid.c
+  src/fftools/textformat/tf_xml.c
+  src/fftools/textformat/tw_avio.c
+  src/fftools/textformat/tw_buffer.c
+  src/fftools/textformat/tw_stdout.c
   src/fftools/ffprobe.c
 )
 

@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) The FFmpeg developers
+ *
  * This file is part of FFmpeg.
  *
  * FFmpeg is free software; you can redistribute it and/or
@@ -16,22 +18,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef FFTOOLS_OBJPOOL_H
-#define FFTOOLS_OBJPOOL_H
+#ifndef FFTOOLS_TEXTFORMAT_TF_MERMAID_H
+#define FFTOOLS_TEXTFORMAT_TF_MERMAID_H
 
-typedef struct ObjPool ObjPool;
+typedef enum {
+    AV_DIAGRAMTYPE_GRAPH,
+    AV_DIAGRAMTYPE_ENTITYRELATIONSHIP,
+} AVDiagramType;
 
-typedef void* (*ObjPoolCBAlloc)(void);
-typedef void  (*ObjPoolCBReset)(void *);
-typedef void  (*ObjPoolCBFree)(void **);
+typedef struct AVDiagramConfig {
+    AVDiagramType diagram_type;
+    const char *diagram_css;
+    const char *html_template;
+} AVDiagramConfig;
 
-void     objpool_free(ObjPool **op);
-ObjPool *objpool_alloc(ObjPoolCBAlloc cb_alloc, ObjPoolCBReset cb_reset,
-                       ObjPoolCBFree cb_free);
-ObjPool *objpool_alloc_packets(void);
-ObjPool *objpool_alloc_frames(void);
 
-int  objpool_get(ObjPool *op, void **obj);
-void objpool_release(ObjPool *op, void **obj);
+void av_diagram_init(AVTextFormatContext *tfc, AVDiagramConfig *diagram_config);
 
-#endif // FFTOOLS_OBJPOOL_H
+void av_mermaid_set_html_template(AVTextFormatContext *tfc, const char *html_template);
+
+
+#endif /* FFTOOLS_TEXTFORMAT_TF_MERMAID_H */

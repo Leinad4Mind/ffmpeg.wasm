@@ -1,18 +1,24 @@
-# FloSports fork — FFmpeg 7.1.5 (MT-only)
+# FloSports fork — FFmpeg 8.1.2 (MT-only)
 
-This is a hardened fork of ffmpeg.wasm on **FFmpeg 7.1.5** (upstream is on 5.1.4).
+This is a hardened fork of ffmpeg.wasm on **FFmpeg 8.1.2** (upstream is on 5.1.4).
 It targets an internal **video clipping** use case: cut, transcode, and losslessly
 stitch clips in the browser. Built for **vendoring** (not npm-published).
 
 ## What changed vs upstream
-- **FFmpeg 5.1.4 → 7.1.5**; **Emscripten 3.1.40 → 6.0.2** (digest-pinned, native arm64 + amd64).
+- **FFmpeg 5.1.4 → 8.1.2**; **Emscripten 3.1.40 → 6.0.2** (digest-pinned, native arm64 + amd64).
 - **Lean codec set**: kept x264, vpx, opus, mp3lame, webp, zimg + native AAC.
   Dropped x265, theora, vorbis/ogg, and the subtitle/text stack (libass, freetype,
-  fribidi, harfbuzz) — no subtitles/text overlays. Core is **~23.6 MB** (was 32.7).
-- **MT-only.** The 7.x CLI frontend requires threads, so there is no single-threaded
+  fribidi, harfbuzz) — no subtitles/text overlays. Core is **~25.3 MB** (was 32.7).
+- **MT-only.** The 8.x CLI frontend requires threads, so there is no single-threaded
   core. The MT core requires cross-origin isolation (see Headers below).
 - Supply chain: floating lib branches (x264, lame) pinned to commit SHAs; zlib bumped
   to **1.3.1** (CVE-2018-25032, CVE-2022-37434) from upstream.
+- **8.x frontend port**: the vendored `src/fftools` frontend was re-based onto 8.1.2.
+  vs 7.1: `objpool.c` was dropped (`thread_queue` now uses `libavutil/container_fifo`),
+  ffprobe's writers moved into `textformat/*`, and `libpostproc` is no longer linked.
+  `graph/graphprint.c` (the `-print_graphs` diagnostic) is a fork **no-op stub** —
+  upstream needs the `resources/resman` resource-bundling pipeline, which this
+  hand-rolled build doesn't reproduce; the option parses but produces no output.
 
 ## Capability map (what works in the browser)
 | Operation | Status |
@@ -22,8 +28,9 @@ stitch clips in the browser. Built for **vendoring** (not npm-published).
 | Lossless concat (`-f concat -c copy`) | ✅ |
 | **Multi-input filtergraph** (`xfade` transitions, concat *filter*, overlay) | ❌ deadlocks — **run server-side** |
 
-The multi-input deadlock is a 7.x scheduler-in-wasm limitation (not thread-count).
-Softened transitions must be produced server-side.
+The multi-input deadlock is a scheduler-in-wasm limitation of the 7.x/8.x
+thread-based frontend (not thread-count). Softened transitions must be produced
+server-side.
 
 ## Required headers (MT / SharedArrayBuffer)
 Serve the app's HTML with:
