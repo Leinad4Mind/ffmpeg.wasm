@@ -68,6 +68,7 @@ jobs:
       - name: Build core + JS packages
         run: |
           make prd-mt EXTRA_ARGS="--cache-from=type=gha --cache-to=type=gha,mode=max"
+          make prd-mt-slim EXTRA_ARGS="--cache-from=type=gha --cache-to=type=gha,mode=max"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -82,8 +83,9 @@ jobs:
       - name: Package vendorable artifacts
         run: |
           mkdir -p dist-release
-          tar -C packages/core-mt/dist -czf "dist-release/ffmpeg-core-mt-${GITHUB_REF_NAME}.tgz" .
-          tar -C packages/ffmpeg/dist  -czf "dist-release/ffmpeg-wasm-${GITHUB_REF_NAME}.tgz" .
+          tar -C packages/core-mt/dist      -czf "dist-release/ffmpeg-core-mt-${GITHUB_REF_NAME}.tgz" .
+          tar -C packages/core-mt-slim/dist -czf "dist-release/ffmpeg-core-mt-slim-${GITHUB_REF_NAME}.tgz" .
+          tar -C packages/ffmpeg/dist       -czf "dist-release/ffmpeg-wasm-${GITHUB_REF_NAME}.tgz" .
 
       - name: Attach artifacts to release
         uses: softprops/action-gh-release@v2
