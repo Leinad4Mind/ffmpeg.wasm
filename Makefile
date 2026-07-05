@@ -40,6 +40,12 @@ build-mt:
 		FFMPEG_MT=yes \
 		FFMPEG_VARIANT=full
 
+build-mt-slim:
+	make build \
+		PKG_SUFFIX=-mt-slim \
+		FFMPEG_MT=yes \
+		FFMPEG_VARIANT=slim
+
 dev:
 	make build-st EXTRA_CFLAGS="$(DEV_CFLAGS)" EXTRA_ARGS="$(DEV_ARGS)"
 
@@ -51,3 +57,6 @@ prd:
 
 prd-mt:
 	make build-mt EXTRA_CFLAGS="$(PROD_MT_CFLAGS)"
+
+prd-mt-slim:
+	make build-mt-slim EXTRA_CFLAGS="$(PROD_MT_CFLAGS)"

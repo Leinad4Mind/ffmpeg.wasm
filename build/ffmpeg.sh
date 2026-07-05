@@ -52,7 +52,7 @@ case "${FFMPEG_VARIANT:-full}" in
   slim)
     : # x264 + zlib only
     ;;
-  *)
+  full)
     CODEC_FLAGS+=(
       --enable-libvpx
       --enable-libmp3lame
@@ -60,6 +60,10 @@ case "${FFMPEG_VARIANT:-full}" in
       --enable-libwebp
       --enable-libzimg
     )
+    ;;
+  *)
+    echo "ffmpeg build: unknown FFMPEG_VARIANT='${FFMPEG_VARIANT:-}'" >&2
+    exit 1
     ;;
 esac
 

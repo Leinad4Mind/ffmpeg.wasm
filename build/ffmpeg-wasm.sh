@@ -82,8 +82,12 @@ case "${FFMPEG_VARIANT:-full}" in
   slim)
     FFMPEG_LIBS=(-lx264 -lz)
     ;;
-  *)
+  full)
     FFMPEG_LIBS=(-lx264 -lvpx -lmp3lame -lopus -lz -lwebpmux -lwebp -lsharpyuv -lzimg)
+    ;;
+  *)
+    echo "ffmpeg-wasm build: unknown FFMPEG_VARIANT='${FFMPEG_VARIANT:-}'" >&2
+    exit 1
     ;;
 esac
 
