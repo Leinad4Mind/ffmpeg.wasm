@@ -20,6 +20,20 @@ stitch clips in the browser. Built for **vendoring** (not npm-published).
   upstream needs the `resources/resman` resource-bundling pipeline, which this
   hand-rolled build doesn't reproduce; the option parses but produces no output.
 
+## Release variants
+
+Each release ships two MT cores. Pick the smallest that covers your codecs:
+
+| Variant | Codec libs | Wasm size | Vendor asset | Use when |
+|---------|-----------|-----------|--------------|----------|
+| **full** | x264, vpx, opus, mp3lame, webp, zimg + zlib + native AAC | ~25.3 MB | `ffmpeg-core-mt-<tag>.tgz` | general use / unknown codec needs |
+| **slim** | x264 + zlib + native AAC/H.264 | ~22.5 MB | `ffmpeg-core-mt-slim-<tag>.tgz` | H.264+AAC only: stream-copy, x264 re-encode, image-overlay watermark |
+
+Both are byte-identical at the wrapper/ABI level — same fftools frontend, same
+`_ffmpeg`/`_ffprobe` ABI, same postMessage contract. Slim just returns an error
+if asked for a dropped codec (VP8/VP9, Opus, MP3, WebP, zscale). `live-clipping-poc`
+vendors **slim**.
+
 ## Capability map (what works in the browser)
 | Operation | Status |
 |-----------|--------|
