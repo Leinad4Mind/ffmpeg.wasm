@@ -7,7 +7,9 @@
 
 # ffmpeg-wasm-browser
 
-ffmpeg-wasm-browser is a browser-focused fork of [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm). It keeps the upstream JavaScript API shape, while changing the core build for large browser media jobs: WebAssembly Memory64, WasmFS with OPFS-backed files, JSPI-enabled async filesystem calls, and native DASH parsing through libxml2.
+ffmpeg-wasm-browser is a browser-focused fork of [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm).
+
+> **Note**: This is the YARI-DEV fork branch (ork-yari-dev) used for testing the original WasmFS OPFS implementation in isolation. It keeps the upstream JavaScript API shape, while changing the core build for large browser media jobs: WebAssembly Memory64, WasmFS with OPFS-backed files, JSPI-enabled async filesystem calls, and native DASH parsing through libxml2.
 
 [![stability-experimental](https://img.shields.io/badge/stability-experimental-orange.svg)](https://github.com/emersion/stability-badges#experimental)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
