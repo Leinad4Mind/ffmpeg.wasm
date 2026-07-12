@@ -144,7 +144,7 @@ const listDir = ({ path }: FFMessageListDirData): FSNode[] => {
   const nodes: FSNode[] = [];
   for (const name of names) {
     const stat = ffmpeg.FS.stat(`${path}/${name}`);
-    const isDir = ffmpeg.FS.isDir(stat.mode);
+    const isDir = (stat.mode & 61440) === 16384; // S_IFDIR
     nodes.push({ name, isDir });
   }
   return nodes;

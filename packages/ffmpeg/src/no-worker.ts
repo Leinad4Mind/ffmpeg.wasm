@@ -420,7 +420,7 @@ export class FFmpeg {
     const names = this.#ffmpeg.FS.readdir(path);
     return names.map((name) => {
       const stat = this.#ffmpeg!.FS.stat(`${path}/${name}`);
-      return { name, isDir: this.#ffmpeg!.FS.isDir(stat.mode) };
+      return { name, isDir: (stat.mode & 61440) === 16384 };
     });
   };
 
