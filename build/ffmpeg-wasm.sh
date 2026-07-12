@@ -30,8 +30,7 @@ CONF_FLAGS=(
   -Wno-deprecated-declarations 
   $LDFLAGS 
   -sENVIRONMENT=worker
-  -sMEMORY64=1                             # enable 64-bit wasm memory
-  -sWASM_BIGINT                            # i64 values across JS<->wasm cross as BigInt (needed for MEMORY64)
+  -sWASM_BIGINT                            # i64 values across JS<->wasm cross as BigInt
   -sWASMFS                                 # use the wasm-native filesystem layer
   -sFORCE_FILESYSTEM                       # keep the JS FS API used by @ffmpeg-wasm-browser/ffmpeg and the extension
   -sJSPI                                   # OPFS-backed WasmFS operations are async under the hood
