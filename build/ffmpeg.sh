@@ -60,13 +60,16 @@ case "${FFMPEG_VARIANT:-full}" in
       --enable-zlib
       --enable-libx264
       --enable-protocol=file,pipe,data,concat,concatf
-      --enable-demuxer=mov,mpegts,concat,image2,png_pipe
-      --enable-muxer=mp4,mov,null
-      --enable-decoder=h264,aac,png
-      --enable-encoder=libx264,aac
-      --enable-parser=h264,aac,png
+      --enable-demuxer=mov,mpegts,concat,image2,png_pipe,matroska,webm
+      --enable-muxer=mp4,mov,null,matroska,webm
+      --enable-decoder=h264,aac,png,ass,ssa,srt,subrip,webvtt
+      --enable-encoder=libx264,aac,ass,ssa,srt,subrip,webvtt
+      --enable-parser=h264,aac,png,ass,srt,webvtt
       --enable-bsf=h264_mp4toannexb,aac_adtstoasc,extract_extradata,null
-      --enable-filter=overlay,scale,format,null,copy,aformat,anull,aresample,fps,setpts,asetpts,buffer,buffersink,abuffer,abuffersink
+      --enable-filter=overlay,scale,format,null,copy,aformat,anull,aresample,fps,setpts,asetpts,buffer,buffersink,abuffer,abuffersink,subtitles,ass
+      --enable-libass
+      --enable-libfreetype
+      --enable-libfribidi
     )
     ;;
   full)

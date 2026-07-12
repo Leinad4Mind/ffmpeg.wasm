@@ -146,32 +146,7 @@ COPY src/bind /src/src/bind
 COPY src/fftools /src/src/fftools
 COPY build/ffmpeg-wasm.sh build.sh
 COPY scripts/patch-opfs-async-access.js scripts/patch-opfs-async-access.js
-<<<<<<< HEAD
 # Codec link libs are selected inside build.sh by $FFMPEG_VARIANT.
-=======
-# libraries to link
-ENV FFMPEG_LIBS \
-      -lx264 \
-      -lx265 \
-      -lvpx \
-      -lmp3lame \
-      -logg \
-      -ltheora \
-      -lvorbis \
-      -lvorbisenc \
-      -lvorbisfile \
-      -lopus \
-      -lz \
-      -lwebpmux \
-      -lwebp \
-      -lsharpyuv \
-      -lfreetype \
-      -lfribidi \
-      -lharfbuzz \
-      -lass \
-      -lzimg \
-      -lxml2
->>>>>>> 1893073 (Enable native DASH parsing with libxml2)
 RUN mkdir -p /src/dist/umd && bash -x /src/build.sh \
       -o dist/umd/ffmpeg-core.js \
     && node scripts/patch-opfs-async-access.js dist/umd/ffmpeg-core.js
