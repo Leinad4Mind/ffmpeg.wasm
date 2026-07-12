@@ -1,5 +1,5 @@
 {
-  "name": "@ffmpeg/types",
+  "name": "@leinad4mind/types",
   "version": "0.12.4",
   "description": "ffmpeg.wasm types",
   "types": "types",

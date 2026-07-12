@@ -1,5 +1,5 @@
 {
-  "name": "@ffmpeg/core-mt",
+  "name": "@leinad4mind/core-mt",
   "version": "0.12.10",
   "description": "FFmpeg WebAssembly version (multi thread)",
   "main": "./dist/umd/ffmpeg-core.js",

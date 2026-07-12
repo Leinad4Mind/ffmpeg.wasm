@@ -1,5 +1,5 @@
 {
-  "name": "@ffmpeg-wasm-browser/core",
+  "name": "@leinad4mind/core",
   "version": "0.1.0",
   "description": "FFmpeg WebAssembly version (single thread, wasm-memory64 / 8 GiB max heap)",
   "main": "./dist/umd/ffmpeg-core.js",

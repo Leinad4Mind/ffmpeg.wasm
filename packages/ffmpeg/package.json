@@ -1,5 +1,5 @@
 {
-  "name": "@ffmpeg-wasm-browser/ffmpeg",
+  "name": "@leinad4mind/ffmpeg",
   "version": "0.1.0",
   "description": "Browser-focused FFmpeg WebAssembly wrapper with Memory64, OPFS and no-worker support",
   "main": "./dist/umd/ffmpeg.js",
@@ -71,6 +71,6 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@ffmpeg/types": "^0.12.4"
+    "@leinad4mind/types": "^0.12.4"
   }
 }
