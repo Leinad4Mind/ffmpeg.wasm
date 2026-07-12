@@ -36,13 +36,28 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      # Build the JS packages (@ffmpeg/ffmpeg, @ffmpeg/util). npm install --no-audit --no-fund also fetches
-      # the headless Chromium that mocha-headless-chrome (puppeteer) drives.
+      # Build the JS packages (@ffmpeg/ffmpeg, @ffmpeg/util).
       - name: Build JS packages
         run: npm run build
 
+      # Install a modern Chrome (v137+) that supports WebAssembly JSPI natively.
+      # mocha-headless-chrome bundles puppeteer@13 with Chromium 101 which is too
+      # old for WebAssembly.Suspending — we bypass it with -e.
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@latest
+        with:
+          chrome-version: stable
+        id: setup-chrome
+
       - name: Run MT test suite
-        run: npx start-server-and-test "npm run serve" 3000 "npm run test:browser:ffmpeg:mt"
+        run: |
+          npx start-server-and-test "npm run serve" 3000 \
+            "npx mocha-headless-chrome \
+              -e '${{ steps.setup-chrome.outputs.chrome-path }}' \
+              -a no-sandbox \
+              -a enable-features=SharedArrayBuffer,WebAssemblyJSPI \
+              -a js-flags=--experimental-wasm-jspi \
+              -f http://localhost:3000/tests/ffmpeg-mt.test.html"
 
       - name: Upload core-mt artifact
         uses: actions/upload-artifact@v4
@@ -78,10 +93,25 @@ jobs:
       - name: Build JS packages
         run: npm run build
 
+      # Install a modern Chrome (v137+) for JSPI support — same rationale as above.
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@latest
+        with:
+          chrome-version: stable
+        id: setup-chrome
+
       - name: Run slim app-ops suite
-        run: npx start-server-and-test "npm run serve" 3000 "npm run test:browser:ffmpeg:slim"
+        run: |
+          npx start-server-and-test "npm run serve" 3000 \
+            "npx mocha-headless-chrome \
+              -e '${{ steps.setup-chrome.outputs.chrome-path }}' \
+              -a no-sandbox \
+              -a enable-features=SharedArrayBuffer,WebAssemblyJSPI \
+              -a js-flags=--experimental-wasm-jspi \
+              -f http://localhost:3000/tests/ffmpeg-slim-mt.test.html"
 
       - name: Upload core-mt-slim artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ffmpeg-core-mt-slim
