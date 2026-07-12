@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ffmpeg/ffmpeg": "*",
+    "@ffmpeg-wasm-browser/ffmpeg": "*",
     "@ffmpeg/util": "*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

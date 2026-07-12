@@ -3,8 +3,16 @@ dist
 /.nyc_output
 .DS_Store
 
+# local buildx cache (see Makefile EXTRA_ARGS / CI cache steps)
+build-cache-st/
+build-cache-mt/
+
 # ide
 .idea/
 
 # Local Netlify folder
 .netlify
+
+.actrc
+.act-artifacts/
+build-cache-st/

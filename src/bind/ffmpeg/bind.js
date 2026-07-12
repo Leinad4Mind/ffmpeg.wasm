@@ -25,6 +25,18 @@ Module["progress"] = () => {};
  * Functions
  */
 
+function _getPointerSize() {
+  return 4; // wasm32 (adjust if MEMORY64 is re-enabled)
+}
+
+function asPtrSize(value) {
+  return Number(value);
+}
+
+function ptrToNumber(value) {
+  return Number(value);
+}
+
 function stringToPtr(str) {
   const len = Module["lengthBytesUTF8"](str) + 1;
   const ptr = Module["_malloc"](len);
@@ -55,7 +67,11 @@ function printErr(message) {
 function exec(..._args) {
   const args = [...Module["DEFAULT_ARGS"], ..._args];
   try {
-    Module["_ffmpeg"](args.length, stringsToPtr(args));
+    // FFmpeg 7.x/8.x removed exit_program(); main()/ffmpeg() now returns the exit
+    // code directly, so capture the return value instead of relying on a
+    // C-side EM_ASM setting Module.ret. The Aborted catch remains for the
+    // timeout path, which still abort()s.
+    Module["ret"] = Module["_ffmpeg"](args.length, stringsToPtr(args));
   } catch (e) {
     if (!e.message.startsWith("Aborted")) {
       throw e;
@@ -67,13 +83,194 @@ function exec(..._args) {
 function ffprobe(..._args) {
   const args = [...Module["DEFAULT_ARGS_FFPROBE"], ..._args];
   try {
-    Module["_ffprobe"](args.length, stringsToPtr(args));
+    Module["ret"] = Module["_ffprobe"](args.length, stringsToPtr(args));
   } catch (e) {
     if (!e.message.startsWith("Aborted")) {
       throw e;
     }
   }
   return Module["ret"];
+}
+
+async function mountOPFS(mountPoint = "/opfs") {
+  if (typeof Module["_ffwasm_mount_opfs"] !== "function") {
+    throw new Error("OPFS support was not compiled into this ffmpeg-core");
+  }
+
+  const ptr = stringToPtr(mountPoint);
+  try {
+    const ret = await Module["_ffwasm_mount_opfs"](asPtrSize(ptr));
+    if (ret !== 0) {
+      throw new Error(`mountOPFS(${mountPoint}) failed with ${ret}`);
+    }
+    return mountPoint;
+  } finally {
+    if (typeof Module["_free"] === "function") Module["_free"](ptr);
+  }
+}
+
+async function mkdirp(path) {
+  if (typeof Module["_ffwasm_mkdirp"] !== "function") {
+    throw new Error("mkdirp support was not compiled into this ffmpeg-core");
+  }
+
+  const ptr = stringToPtr(path);
+  try {
+    const ret = await Module["_ffwasm_mkdirp"](asPtrSize(ptr));
+    if (ret !== 0) {
+      throw new Error(`mkdirp(${path}) failed with ${ret}`);
+    }
+    return true;
+  } finally {
+    if (typeof Module["_free"] === "function") Module["_free"](ptr);
+  }
+}
+
+function normalizeFileData(data) {
+  if (data instanceof Uint8Array) return data;
+  if (ArrayBuffer.isView(data)) {
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+  }
+  if (data instanceof ArrayBuffer) return new Uint8Array(data);
+  if (typeof data === "string") return new TextEncoder().encode(data);
+  if (Array.isArray(data)) return new Uint8Array(data);
+  throw new Error("Unsupported file data type");
+}
+
+async function writeFileOPFS(path, data) {
+  // If data is a File or Blob, write it in chunks to avoid OOM
+  if (typeof Blob !== "undefined" && data instanceof Blob) {
+    if (typeof Module["_ffwasm_write_file_chunk"] !== "function") {
+      throw new Error("ffwasm_write_file_chunk support was not compiled into this ffmpeg-core");
+    }
+
+    const CHUNK_SIZE = 16 * 1024 * 1024; // 16MB chunk size
+    let offset = 0;
+
+    while (offset < data.size) {
+      const slice = data.slice(offset, offset + CHUNK_SIZE);
+      const buffer = await slice.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+
+      const pathPtr = stringToPtr(path);
+      const dataPtr = bytes.length > 0 ? Module["_malloc"](bytes.length) : NULL;
+
+      try {
+        if (bytes.length > 0) {
+          Module["HEAPU8"].set(bytes, dataPtr);
+        }
+
+        const ret = await Module["_ffwasm_write_file_chunk"](
+          asPtrSize(pathPtr),
+          BigInt(offset),
+          asPtrSize(dataPtr),
+          asPtrSize(bytes.length)
+        );
+
+        if (ret !== 0) {
+          throw new Error(`writeFileOPFS(${path}) failed at chunk offset ${offset} with ${ret}`);
+        }
+      } finally {
+        if (dataPtr) Module["_free"](dataPtr);
+        if (typeof Module["_free"] === "function") Module["_free"](pathPtr);
+      }
+      
+      offset += bytes.length;
+    }
+
+    // Handle empty file case
+    if (data.size === 0) {
+      const pathPtr = stringToPtr(path);
+      try {
+        const ret = await Module["_ffwasm_write_file_chunk"](
+          asPtrSize(pathPtr),
+          BigInt(0),
+          asPtrSize(NULL),
+          asPtrSize(0)
+        );
+        if (ret !== 0) throw new Error(`writeFileOPFS(${path}) failed with ${ret}`);
+      } finally {
+        if (typeof Module["_free"] === "function") Module["_free"](pathPtr);
+      }
+    }
+    return true;
+  }
+
+  // Fallback for Uint8Array and String data
+  if (typeof Module["_ffwasm_write_file"] !== "function") {
+    throw new Error("writeFileOPFS support was not compiled into this ffmpeg-core");
+  }
+
+  const bytes = normalizeFileData(data);
+  const pathPtr = stringToPtr(path);
+  const dataPtr = bytes.length > 0 ? Module["_malloc"](bytes.length) : NULL;
+  try {
+    if (bytes.length > 0) {
+      Module["HEAPU8"].set(bytes, dataPtr);
+    }
+    const ret = await Module["_ffwasm_write_file"](
+      asPtrSize(pathPtr),
+      asPtrSize(dataPtr),
+      asPtrSize(bytes.length)
+    );
+    if (ret !== 0) {
+      throw new Error(`writeFileOPFS(${path}) failed with ${ret}`);
+    }
+    return true;
+  } finally {
+    if (dataPtr) Module["_free"](dataPtr);
+    if (typeof Module["_free"] === "function") Module["_free"](pathPtr);
+  }
+}
+
+async function fileSize(path) {
+  if (typeof Module["_ffwasm_file_size"] !== "function") {
+    throw new Error("fileSize support was not compiled into this ffmpeg-core");
+  }
+
+  const pathPtr = stringToPtr(path);
+  try {
+    const ret = await Module["_ffwasm_file_size"](asPtrSize(pathPtr));
+    const size = ptrToNumber(ret);
+    if (size < 0) {
+      throw new Error(`fileSize(${path}) failed with ${size}`);
+    }
+    return size;
+  } finally {
+    if (typeof Module["_free"] === "function") Module["_free"](pathPtr);
+  }
+}
+
+async function readFileChunk(path, offset, length) {
+  if (typeof Module["_ffwasm_read_file_chunk"] !== "function") {
+    throw new Error("readFileChunk support was not compiled into this ffmpeg-core");
+  }
+
+  if (offset < 0 || length < 0) {
+    throw new Error("readFileChunk offset and length must be non-negative");
+  }
+
+  const pathPtr = stringToPtr(path);
+  const outPtr = length > 0 ? Module["_malloc"](length) : NULL;
+  const bytesReadPtr = Module["_malloc"](_getPointerSize());
+  try {
+    const ret = await Module["_ffwasm_read_file_chunk"](
+      asPtrSize(pathPtr),
+      BigInt(offset),
+      asPtrSize(outPtr),
+      asPtrSize(length),
+      asPtrSize(bytesReadPtr)
+    );
+    if (ret !== 0) {
+      throw new Error(`readFileChunk(${path}) failed with ${ret}`);
+    }
+    const bytesRead = ptrToNumber(Module["getValue"](bytesReadPtr, "*"));
+    return Module["HEAPU8"].slice(outPtr, outPtr + bytesRead);
+  } finally {
+    if (outPtr) Module["_free"](outPtr);
+    Module["_free"](bytesReadPtr);
+    if (typeof Module["_free"] === "function") Module["_free"](pathPtr);
+  }
 }
 
 function setLogger(logger) {
@@ -136,6 +333,11 @@ Module["locateFile"] = _locateFile;
 
 Module["exec"] = exec;
 Module["ffprobe"] = ffprobe;
+Module["mountOPFS"] = mountOPFS;
+Module["mkdirp"] = mkdirp;
+Module["writeFileOPFS"] = writeFileOPFS;
+Module["fileSize"] = fileSize;
+Module["readFileChunk"] = readFileChunk;
 Module["setLogger"] = setLogger;
 Module["setTimeout"] = setTimeout;
 Module["setProgress"] = setProgress;

@@ -1,8 +1,8 @@
 export const MIME_TYPE_JAVASCRIPT = "text/javascript";
 export const MIME_TYPE_WASM = "application/wasm";
 
-export const CORE_VERSION = "0.12.10";
-export const CORE_URL = `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VERSION}/dist/umd/ffmpeg-core.js`;
+export const CORE_VERSION = "0.1.0";
+export const CORE_URL = `https://cdn.jsdelivr.net/npm/@ffmpeg-wasm-browser/core@${CORE_VERSION}/dist/umd/ffmpeg-core.js`;
 
 export enum FFMessageType {
   LOAD = "LOAD",
@@ -22,4 +22,9 @@ export enum FFMessageType {
   LOG = "LOG",
   MOUNT = "MOUNT",
   UNMOUNT = "UNMOUNT",
+  MOUNT_OPFS = "MOUNT_OPFS",
+  MKDIRP = "MKDIRP",
+  WRITE_FILE_OPFS = "WRITE_FILE_OPFS",
+  FILE_SIZE = "FILE_SIZE",
+  READ_FILE_CHUNK = "READ_FILE_CHUNK",
 }

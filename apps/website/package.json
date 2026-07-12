@@ -24,7 +24,7 @@
     "@docusaurus/theme-live-codeblock": "^2.4.1",
     "@emotion/react": "^11.10.4",
     "@emotion/styled": "^11.10.4",
-    "@ffmpeg/ffmpeg": "*",
+    "@ffmpeg-wasm-browser/ffmpeg": "*",
     "@ffmpeg/util": "*",
     "@fontsource/roboto": "^4.5.8",
     "@mdx-js/react": "^1.6.22",

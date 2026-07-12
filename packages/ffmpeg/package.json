@@ -1,7 +1,7 @@
 {
-  "name": "@ffmpeg/ffmpeg",
-  "version": "0.12.15",
-  "description": "FFmpeg WebAssembly version for browser",
+  "name": "@leinad4mind/ffmpeg",
+  "version": "0.1.0",
+  "description": "Browser-focused FFmpeg WebAssembly wrapper with Memory64, OPFS and no-worker support",
   "main": "./dist/umd/ffmpeg.js",
   "types": "./dist/esm/index.d.ts",
   "exports": {
@@ -16,6 +16,14 @@
     "./worker": {
       "types": "./dist/esm/worker.d.ts",
       "default": "./dist/esm/worker.js"
+    },
+    "./no-worker": {
+      "types": "./dist/esm/no-worker.d.ts",
+      "node": "./dist/esm/empty.mjs",
+      "default": {
+        "import": "./dist/esm/no-worker.js",
+        "require": "./dist/umd/ffmpeg-no-worker.js"
+      }
     }
   },
   "scripts": {
@@ -33,7 +41,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ffmpegwasm/ffmpeg.wasm.git"
+    "url": "git+https://github.com/yari-dev/ffmpeg-wasm-browser.git"
   },
   "keywords": [
     "ffmpeg",
@@ -45,12 +53,12 @@
   "author": "Jerome Wu <jeromewus@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ffmpegwasm/ffmpeg.wasm/issues"
+    "url": "https://github.com/yari-dev/ffmpeg-wasm-browser/issues"
   },
   "engines": {
     "node": ">=18.x"
   },
-  "homepage": "https://github.com/ffmpegwasm/ffmpeg.wasm#readme",
+  "homepage": "https://github.com/yari-dev/ffmpeg-wasm-browser#readme",
   "publishConfig": {
     "access": "public"
   },
@@ -63,6 +71,6 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@ffmpeg/types": "^0.12.4"
+    "@leinad4mind/types": "^0.12.4"
   }
 }

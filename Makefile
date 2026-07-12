@@ -19,11 +19,13 @@ build:
 	EXTRA_LDFLAGS="$(EXTRA_LDFLAGS)" \
 	FFMPEG_ST="$(FFMPEG_ST)" \
 	FFMPEG_MT="$(FFMPEG_MT)" \
+	FFMPEG_VARIANT="$(FFMPEG_VARIANT)" \
 		docker buildx build \
 			--build-arg EXTRA_CFLAGS \
 			--build-arg EXTRA_LDFLAGS \
 			--build-arg FFMPEG_MT \
 			--build-arg FFMPEG_ST \
+			--build-arg FFMPEG_VARIANT \
 			-o ./packages/core$(PKG_SUFFIX) \
 			$(EXTRA_ARGS) \
 			.
@@ -35,7 +37,14 @@ build-st:
 build-mt:
 	make build \
 		PKG_SUFFIX=-mt \
-		FFMPEG_MT=yes
+		FFMPEG_MT=yes \
+		FFMPEG_VARIANT=full
+
+build-mt-slim:
+	make build \
+		PKG_SUFFIX=-mt-slim \
+		FFMPEG_MT=yes \
+		FFMPEG_VARIANT=slim
 
 dev:
 	make build-st EXTRA_CFLAGS="$(DEV_CFLAGS)" EXTRA_ARGS="$(DEV_ARGS)"
@@ -48,3 +57,6 @@ prd:
 
 prd-mt:
 	make build-mt EXTRA_CFLAGS="$(PROD_MT_CFLAGS)"
+
+prd-mt-slim:
+	make build-mt-slim EXTRA_CFLAGS="$(PROD_MT_CFLAGS)"

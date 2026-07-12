@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { FFmpeg } from "@ffmpeg-wasm-browser/ffmpeg";
 import { toBlobURL } from "@ffmpeg/util";
 import Stack from "@mui/material/Stack";
 import MuiThemeProvider from "@site/src/components/common/MuiThemeProvider";

@@ -6,12 +6,12 @@
 </template>
 
 <script lang="ts">
-import { FFmpeg } from '@ffmpeg/ffmpeg'
-import type { LogEvent } from '@ffmpeg/ffmpeg/dist/esm/types'
+import { FFmpeg } from '@ffmpeg-wasm-browser/ffmpeg'
+import type { LogEvent } from '@ffmpeg-wasm-browser/ffmpeg/dist/esm/types'
 import { fetchFile, toBlobURL } from '@ffmpeg/util'
 import { defineComponent, ref } from 'vue'
 
-const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core-mt@0.12.10/dist/esm'
+const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core-mt@0.1.0/dist/esm'
 const videoURL = 'https://raw.githubusercontent.com/ffmpegwasm/testdata/master/video-15s.avi'
 
 export default defineComponent({

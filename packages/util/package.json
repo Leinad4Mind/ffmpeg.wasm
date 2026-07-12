@@ -1,5 +1,5 @@
 {
-  "name": "@ffmpeg/util",
+  "name": "@leinad4mind/util",
   "version": "0.12.2",
   "description": "browser utils for @ffmpeg/*",
   "main": "./dist/cjs/index.js",

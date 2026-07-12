@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ffmpeg/ffmpeg": "*",
+    "@ffmpeg-wasm-browser/ffmpeg": "*",
     "@ffmpeg/util": "*",
     "@types/node": "20.4.9",
     "@types/react": "18.2.20",

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { FFmpeg } from '@ffmpeg/ffmpeg';
+	import { FFmpeg } from '@ffmpeg-wasm-browser/ffmpeg';
 	// @ts-ignore
-	import type { LogEvent } from '@ffmpeg/ffmpeg/dist/esm/types';
+	import type { LogEvent } from '@ffmpeg-wasm-browser/ffmpeg/dist/esm/types';
 	import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
 	let videoEl: HTMLVideoElement;

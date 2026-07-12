@@ -16,12 +16,18 @@ import type {
   FFMessageDeleteDirData,
   FFMessageMountData,
   FFMessageUnmountData,
+  FFMessageMountOPFSData,
+  FFMessageMkdirpData,
+  FFMessageWriteFileOPFSData,
+  FFMessageFileSizeData,
+  FFMessageReadFileChunkData,
   CallbackData,
   IsFirst,
   OK,
   ExitCode,
   FSNode,
   FileData,
+  FFFSPath,
 } from "./types";
 import { CORE_URL, FFMessageType } from "./const.js";
 import {
@@ -92,17 +98,17 @@ const load = async ({
   return first;
 };
 
-const exec = ({ args, timeout = -1 }: FFMessageExecData): ExitCode => {
+const exec = async ({ args, timeout = -1 }: FFMessageExecData): Promise<ExitCode> => {
   ffmpeg.setTimeout(timeout);
-  ffmpeg.exec(...args);
+  await ffmpeg.exec(...args);
   const ret = ffmpeg.ret;
   ffmpeg.reset();
   return ret;
 };
 
-const ffprobe = ({ args, timeout = -1 }: FFMessageExecData): ExitCode => {
+const ffprobe = async ({ args, timeout = -1 }: FFMessageExecData): Promise<ExitCode> => {
   ffmpeg.setTimeout(timeout);
-  ffmpeg.ffprobe(...args);
+  await ffmpeg.ffprobe(...args);
   const ret = ffmpeg.ret;
   ffmpeg.reset();
   return ret;
@@ -138,7 +144,7 @@ const listDir = ({ path }: FFMessageListDirData): FSNode[] => {
   const nodes: FSNode[] = [];
   for (const name of names) {
     const stat = ffmpeg.FS.stat(`${path}/${name}`);
-    const isDir = ffmpeg.FS.isDir(stat.mode);
+    const isDir = (stat.mode & 61440) === 16384; // S_IFDIR
     nodes.push({ name, isDir });
   }
   return nodes;
@@ -163,6 +169,41 @@ const unmount = ({ mountPoint }: FFMessageUnmountData): OK => {
   return true;
 };
 
+const mountOPFS = async ({ mountPoint = "/opfs" }: FFMessageMountOPFSData): Promise<FFFSPath> => {
+  if (typeof ffmpeg.mountOPFS !== "function") {
+    throw new Error("mountOPFS is not available in this ffmpeg-core build");
+  }
+  return ffmpeg.mountOPFS(mountPoint);
+};
+
+const mkdirp = async ({ path }: FFMessageMkdirpData): Promise<OK> => {
+  if (typeof ffmpeg.mkdirp !== "function") {
+    throw new Error("mkdirp is not available in this ffmpeg-core build");
+  }
+  return ffmpeg.mkdirp(path);
+};
+
+const writeFileOPFS = async ({ path, data }: FFMessageWriteFileOPFSData): Promise<OK> => {
+  if (typeof ffmpeg.writeFileOPFS !== "function") {
+    throw new Error("writeFileOPFS is not available in this ffmpeg-core build");
+  }
+  return ffmpeg.writeFileOPFS(path, data);
+};
+
+const fileSize = async ({ path }: FFMessageFileSizeData): Promise<number> => {
+  if (typeof ffmpeg.fileSize !== "function") {
+    throw new Error("fileSize is not available in this ffmpeg-core build");
+  }
+  return ffmpeg.fileSize(path);
+};
+
+const readFileChunk = async ({ path, offset, length }: FFMessageReadFileChunkData): Promise<Uint8Array> => {
+  if (typeof ffmpeg.readFileChunk !== "function") {
+    throw new Error("readFileChunk is not available in this ffmpeg-core build");
+  }
+  return ffmpeg.readFileChunk(path, offset, length);
+};
+
 self.onmessage = async ({
   data: { id, type, data: _data },
 }: FFMessageEvent): Promise<void> => {
@@ -176,10 +217,10 @@ self.onmessage = async ({
         data = await load(_data as FFMessageLoadConfig);
         break;
       case FFMessageType.EXEC:
-        data = exec(_data as FFMessageExecData);
+        data = await exec(_data as FFMessageExecData);
         break;
       case FFMessageType.FFPROBE:
-        data = ffprobe(_data as FFMessageExecData);
+        data = await ffprobe(_data as FFMessageExecData);
         break;
       case FFMessageType.WRITE_FILE:
         data = writeFile(_data as FFMessageWriteFileData);
@@ -207,6 +248,21 @@ self.onmessage = async ({
         break;
       case FFMessageType.UNMOUNT:
         data = unmount(_data as FFMessageUnmountData);
+        break;
+      case FFMessageType.MOUNT_OPFS:
+        data = await mountOPFS(_data as FFMessageMountOPFSData);
+        break;
+      case FFMessageType.MKDIRP:
+        data = await mkdirp(_data as FFMessageMkdirpData);
+        break;
+      case FFMessageType.WRITE_FILE_OPFS:
+        data = await writeFileOPFS(_data as FFMessageWriteFileOPFSData);
+        break;
+      case FFMessageType.FILE_SIZE:
+        data = await fileSize(_data as FFMessageFileSizeData);
+        break;
+      case FFMessageType.READ_FILE_CHUNK:
+        data = await readFileChunk(_data as FFMessageReadFileChunkData);
         break;
       default:
         throw ERROR_UNKNOWN_MESSAGE_TYPE;

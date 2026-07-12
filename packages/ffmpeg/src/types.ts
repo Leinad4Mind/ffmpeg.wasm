@@ -7,13 +7,13 @@ export interface FFMessageLoadConfig {
   /**
    * `ffmpeg-core.js` URL.
    *
-   * @defaultValue `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VERSION}/dist/umd/ffmpeg-core.js`;
+   * @defaultValue `https://cdn.jsdelivr.net/npm/@ffmpeg-wasm-browser/core@${CORE_VERSION}/dist/umd/ffmpeg-core.js`;
    */
   coreURL?: string;
   /**
    * `ffmpeg-core.wasm` URL.
    *
-   * @defaultValue `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VERSION}/dist/umd/ffmpeg-core.wasm`;
+   * @defaultValue `https://cdn.jsdelivr.net/npm/@ffmpeg-wasm-browser/core@${CORE_VERSION}/dist/umd/ffmpeg-core.wasm`;
    */
   wasmURL?: string;
   /**
@@ -107,6 +107,29 @@ export interface FFMessageUnmountData {
   mountPoint: FFFSPath;
 }
 
+export interface FFMessageMountOPFSData {
+  mountPoint?: FFFSPath;
+}
+
+export interface FFMessageMkdirpData {
+  path: FFFSPath;
+}
+
+export interface FFMessageWriteFileOPFSData {
+  path: FFFSPath;
+  data: OPFSFileData;
+}
+
+export interface FFMessageFileSizeData {
+  path: FFFSPath;
+}
+
+export interface FFMessageReadFileChunkData {
+  path: FFFSPath;
+  offset: number;
+  length: number;
+}
+
 export type FFMessageData =
   | FFMessageLoadConfig
   | FFMessageExecData
@@ -118,7 +141,12 @@ export type FFMessageData =
   | FFMessageListDirData
   | FFMessageDeleteDirData
   | FFMessageMountData
-  | FFMessageUnmountData;
+  | FFMessageUnmountData
+  | FFMessageMountOPFSData
+  | FFMessageMkdirpData
+  | FFMessageWriteFileOPFSData
+  | FFMessageFileSizeData
+  | FFMessageReadFileChunkData;
 
 export interface Message {
   type: string;
@@ -146,6 +174,7 @@ export interface ProgressEvent {
 export type ExitCode = number;
 export type ErrorMessage = string;
 export type FileData = Uint8Array | string;
+export type OPFSFileData = FileData | File | Blob;
 export type IsFirst = boolean;
 export type OK = boolean;
 

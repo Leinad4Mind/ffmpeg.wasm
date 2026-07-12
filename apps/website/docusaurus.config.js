@@ -151,7 +151,7 @@ const config = {
         readme: "none",
         out: "api/ffmpeg",
         sidebar: {
-          indexLabel: "@ffmpeg/ffmpeg",
+          indexLabel: "@ffmpeg-wasm-browser/ffmpeg",
           fullNames: true,
         },
       },
