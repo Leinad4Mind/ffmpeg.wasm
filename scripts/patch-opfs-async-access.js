@@ -21,6 +21,13 @@ for (const file of files) {
   }
   if (!input.includes(original)) {
     console.error(`${file}: OPFS async access shim pattern not found`);
+    const match = input.match(/class FileSystemAsyncAccessHandle\{.*?\}/);
+    if (match) {
+      console.error("ACTUAL CLASS EMITTED BY EMSCRIPTEN:");
+      console.error(match[0]);
+    } else {
+      console.error("Class FileSystemAsyncAccessHandle not found at all!");
+    }
     failed = true;
     continue;
   }
