@@ -15,23 +15,13 @@ const patched = 'class FileSystemAsyncAccessHandle{constructor(handle){this.hand
 let failed = false;
 for (const file of files) {
   const input = fs.readFileSync(file, "utf8");
-  if (input.includes(patched)) {
-    console.log(`${file}: already patched`);
-    continue;
-  }
-  if (!input.includes(original)) {
+  const regex = /class FileSystemAsyncAccessHandle\{[\s\S]*?\btruncate\b[\s\S]*?\}/;
+  if (!regex.test(input)) {
     console.error(`${file}: OPFS async access shim pattern not found`);
-    const match = input.match(/class FileSystemAsyncAccessHandle\{.*?\}/);
-    if (match) {
-      console.error("ACTUAL CLASS EMITTED BY EMSCRIPTEN:");
-      console.error(match[0]);
-    } else {
-      console.error("Class FileSystemAsyncAccessHandle not found at all!");
-    }
     failed = true;
     continue;
   }
-  fs.writeFileSync(file, input.replace(original, patched));
+  fs.writeFileSync(file, input.replace(regex, patched));
   console.log(`${file}: patched`);
 }
 
