@@ -117,7 +117,7 @@ export interface FFMessageMkdirpData {
 
 export interface FFMessageWriteFileOPFSData {
   path: FFFSPath;
-  data: FileData;
+  data: OPFSFileData;
 }
 
 export interface FFMessageFileSizeData {
@@ -174,6 +174,7 @@ export interface ProgressEvent {
 export type ExitCode = number;
 export type ErrorMessage = string;
 export type FileData = Uint8Array | string;
+export type OPFSFileData = FileData | File | Blob;
 export type IsFirst = boolean;
 export type OK = boolean;
 

@@ -16,6 +16,7 @@ import {
   FFFSType,
   FFFSMountOptions,
   FFFSPath,
+  OPFSFileData,
 } from "./types.js";
 import { getMessageID } from "./utils.js";
 import { ERROR_TERMINATED, ERROR_NOT_LOADED } from "./errors.js";
@@ -417,7 +418,7 @@ export class FFmpeg {
    */
   public writeFileOPFS = (
     path: string,
-    data: FileData,
+    data: OPFSFileData,
     { signal }: FFMessageOptions = {}
   ): Promise<OK> => {
     const trans: Transferable[] = [];

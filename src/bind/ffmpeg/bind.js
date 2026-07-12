@@ -25,6 +25,18 @@ Module["progress"] = () => {};
  * Functions
  */
 
+function _getPointerSize() {
+  return 4; // wasm32 (adjust if MEMORY64 is re-enabled)
+}
+
+function asPtrSize(value) {
+  return Number(value);
+}
+
+function ptrToNumber(value) {
+  return Number(value);
+}
+
 function stringToPtr(str) {
   const len = Module["lengthBytesUTF8"](str) + 1;
   const ptr = Module["_malloc"](len);
@@ -126,6 +138,65 @@ function normalizeFileData(data) {
 }
 
 async function writeFileOPFS(path, data) {
+  // If data is a File or Blob, write it in chunks to avoid OOM
+  if (typeof Blob !== "undefined" && data instanceof Blob) {
+    if (typeof Module["_ffwasm_write_file_chunk"] !== "function") {
+      throw new Error("ffwasm_write_file_chunk support was not compiled into this ffmpeg-core");
+    }
+
+    const CHUNK_SIZE = 16 * 1024 * 1024; // 16MB chunk size
+    let offset = 0;
+
+    while (offset < data.size) {
+      const slice = data.slice(offset, offset + CHUNK_SIZE);
+      const buffer = await slice.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+
+      const pathPtr = stringToPtr(path);
+      const dataPtr = bytes.length > 0 ? Module["_malloc"](bytes.length) : NULL;
+
+      try {
+        if (bytes.length > 0) {
+          Module["HEAPU8"].set(bytes, dataPtr);
+        }
+
+        const ret = await Module["_ffwasm_write_file_chunk"](
+          asPtrSize(pathPtr),
+          BigInt(offset),
+          asPtrSize(dataPtr),
+          asPtrSize(bytes.length)
+        );
+
+        if (ret !== 0) {
+          throw new Error(`writeFileOPFS(${path}) failed at chunk offset ${offset} with ${ret}`);
+        }
+      } finally {
+        if (dataPtr) Module["_free"](dataPtr);
+        if (typeof Module["_free"] === "function") Module["_free"](pathPtr);
+      }
+      
+      offset += bytes.length;
+    }
+
+    // Handle empty file case
+    if (data.size === 0) {
+      const pathPtr = stringToPtr(path);
+      try {
+        const ret = await Module["_ffwasm_write_file_chunk"](
+          asPtrSize(pathPtr),
+          BigInt(0),
+          asPtrSize(NULL),
+          asPtrSize(0)
+        );
+        if (ret !== 0) throw new Error(`writeFileOPFS(${path}) failed with ${ret}`);
+      } finally {
+        if (typeof Module["_free"] === "function") Module["_free"](pathPtr);
+      }
+    }
+    return true;
+  }
+
+  // Fallback for Uint8Array and String data
   if (typeof Module["_ffwasm_write_file"] !== "function") {
     throw new Error("writeFileOPFS support was not compiled into this ffmpeg-core");
   }
@@ -185,7 +256,7 @@ async function readFileChunk(path, offset, length) {
   try {
     const ret = await Module["_ffwasm_read_file_chunk"](
       asPtrSize(pathPtr),
-      asPtrSize(offset),
+      BigInt(offset),
       asPtrSize(outPtr),
       asPtrSize(length),
       asPtrSize(bytesReadPtr)

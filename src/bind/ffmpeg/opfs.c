@@ -114,6 +114,53 @@ int ffwasm_write_file(const char *path, const unsigned char *data, size_t len) {
 }
 
 EMSCRIPTEN_KEEPALIVE
+int ffwasm_write_file_chunk(
+  const char *path,
+  long long offset,
+  const unsigned char *data,
+  size_t len
+) {
+  if (!path || !path[0] || (!data && len > 0) || offset < 0) {
+    errno = EINVAL;
+    return -EINVAL;
+  }
+
+  FILE *file;
+  if (offset == 0) {
+    file = fopen(path, "wb");
+  } else {
+    file = fopen(path, "r+b");
+  }
+
+  if (!file) {
+    return -errno;
+  }
+
+  if (offset > 0 && fseeko(file, (off_t)offset, SEEK_SET) != 0) {
+    int err = errno;
+    fclose(file);
+    return -err;
+  }
+
+  size_t written = 0;
+  while (written < len) {
+    size_t n = fwrite(data + written, 1, len - written, file);
+    if (n == 0) {
+      int err = ferror(file) ? errno : EIO;
+      fclose(file);
+      return -err;
+    }
+    written += n;
+  }
+
+  if (fclose(file) != 0) {
+    return -errno;
+  }
+
+  return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE
 long long ffwasm_file_size(const char *path) {
   if (!path || !path[0]) {
     errno = EINVAL;

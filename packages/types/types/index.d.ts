@@ -128,7 +128,7 @@ export interface FFmpegCoreModule {
   ffprobe: (...args: string[]) => Promise<number>;
   mountOPFS: (mountPoint?: string) => Promise<string>;
   mkdirp: (path: string) => Promise<boolean>;
-  writeFileOPFS: (path: string, data: Uint8Array | ArrayBuffer | string | number[]) => Promise<boolean>;
+  writeFileOPFS: (path: string, data: Uint8Array | ArrayBuffer | string | number[] | File | Blob) => Promise<boolean>;
   fileSize: (path: string) => Promise<number>;
   readFileChunk: (path: string, offset: number, length: number) => Promise<Uint8Array>;
   reset: () => void;

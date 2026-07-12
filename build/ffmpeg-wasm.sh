@@ -34,7 +34,7 @@ CONF_FLAGS=(
   -sWASMFS                                 # use the wasm-native filesystem layer
   -sFORCE_FILESYSTEM                       # keep the JS FS API used by @ffmpeg-wasm-browser/ffmpeg and the extension
   -sJSPI                                   # OPFS-backed WasmFS operations are async under the hood
-  -sJSPI_EXPORTS=ffmpeg,ffprobe,ffwasm_mount_opfs,ffwasm_mkdirp,ffwasm_write_file,ffwasm_file_size,ffwasm_read_file_chunk
+  -sJSPI_EXPORTS=ffmpeg,ffprobe,ffwasm_mount_opfs,ffwasm_mkdirp,ffwasm_write_file,ffwasm_write_file_chunk,ffwasm_file_size,ffwasm_read_file_chunk
   -sUSE_SDL=2                              # use emscripten SDL2 lib port
   -sSTACK_SIZE=5MB                         # increase stack size to support libopus
   -sMODULARIZE                             # modularized to use as a library

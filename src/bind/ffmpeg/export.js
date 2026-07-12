@@ -9,6 +9,7 @@ const EXPORTED_FUNCTIONS = [
   "_ffwasm_write_file",
   "_ffwasm_file_size",
   "_ffwasm_read_file_chunk",
+  "_ffwasm_write_file_chunk",
 ];
 
 console.log(EXPORTED_FUNCTIONS.join(","));
