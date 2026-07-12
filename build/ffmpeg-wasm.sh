@@ -86,7 +86,7 @@ CONF_FLAGS=(
 # build/ffmpeg.sh. -lz is always present (PNG/zlib). Slim links only x264 + z.
 case "${FFMPEG_VARIANT:-full}" in
   slim)
-    FFMPEG_LIBS=(-lx264 -lz -lass -lfreetype -lfribidi -lharfbuzz -lxml2)
+    FFMPEG_LIBS=(-lx264 -lass -lfreetype -lfribidi -lharfbuzz -lxml2 -lz)
     ;;
   full)
     FFMPEG_LIBS=(-lx264 -lvpx -lmp3lame -lopus -lz -lwebpmux -lwebp -lsharpyuv -lzimg)
